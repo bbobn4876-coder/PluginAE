@@ -9,11 +9,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned Features
 - GPU acceleration support
-- Real-time preview optimization
-- Preset animation keyframing
-- Batch preset application
-- Preset import/export functionality
-- Custom UI for preset editing
+- LUT file import
+- Preset animations with keyframes
+- Cloud sync for preset collections
+- Collaborative preset sharing
+
+## [2.0.0] - 2025-11-19
+
+### Added - Major Update
+#### Preset Manager V2
+- **Category System**: Organize presets into custom categories
+- **Advanced Search**: Search by name, description, tags, and category
+- **Favorites System**: Mark and filter favorite presets
+- **Tag-based Classification**: Multiple tags per preset
+- **Dynamic Filtering**: Filter by type, category, favorites
+- **Preset Statistics**: Track usage and preset counts
+- **Extended Preset Info**: Author, version, detailed descriptions
+
+#### User Interface
+- **Custom Preset Manager UI**: Visual preset browser
+- **Real-time Search**: Live search results
+- **Category Navigation**: Browse by category
+- **Preset Details Panel**: Show full preset information
+- **Keyboard Shortcuts**: Navigate with keyboard
+- **Visual Feedback**: Clear selection and state indicators
+
+#### Preview System
+- **Preview Mode**: See effects before applying
+- **Non-destructive Testing**: Test without undo
+- **Real-time Updates**: Instant preview rendering
+- **Performance Optimization**: Fast preview rendering
+- **Preview Controls**: Start/stop/update preview
+- **Intensity Preview**: Adjust intensity in preview mode
+
+#### Python Tools
+- **CLI Tool (preset_manager.py)**: Command-line preset management
+  - List, search, create, delete presets
+  - Import/export preset collections
+  - Category management
+  - Batch operations
+- **GUI Tool (preset_gui.py)**: Graphical preset manager
+  - Visual preset editor
+  - Drag-and-drop organization
+  - Import/export UI
+  - Category management
+- **API Documentation**: Complete Python API reference
+
+### Enhanced
+- **Preset Structure**: Extended with tags, author, version
+- **Search Algorithm**: Fuzzy matching and multi-field search
+- **Performance**: Optimized preset loading and caching
+- **Memory Management**: Better resource handling
+- **Error Handling**: Improved error messages and validation
+
+### Technical Improvements
+- **PresetManagerV2 Class**: Complete rewrite with advanced features
+- **PresetUI Class**: Custom UI implementation
+- **Search Filter System**: Flexible filtering architecture
+- **JSON Schema**: Extended schema for new fields
+- **Index Caching**: Fast preset lookup by ID/name
+- **Category Management**: Dynamic category creation/deletion
+
+### Documentation
+- **ADVANCED_FEATURES.md**: Complete guide to v2.0 features
+- **README_V2.md**: Updated README for version 2.0
+- **python_tools/README.md**: Python tools documentation
+- **API Reference**: Full API documentation
+- **Updated Examples**: New examples using v2.0 features
 
 ## [1.0.0] - 2025-11-19
 

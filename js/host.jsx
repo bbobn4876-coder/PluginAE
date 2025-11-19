@@ -283,7 +283,7 @@ function executeJSXFile(filePath) {
 }
 
 /**
- * Scan Projects folder for JSX and GIF files
+ * Scan Projects folder for ALL files
  * @return {string} JSON string with files array
  */
 function scanProjectsFolder() {
@@ -306,19 +306,23 @@ function scanProjectsFolder() {
 
             // Check if it's a file (not a folder)
             if (file instanceof File) {
-                var fileName = file.name.toLowerCase();
-
-                // Check for .jsx or .gif extensions
-                if (fileName.match(/\.(jsx|gif)$/i)) {
-                    var fileType = fileName.split('.').pop().toLowerCase();
-
-                    files.push({
-                        name: file.name,
-                        path: file.fsName,
-                        type: fileType,
-                        size: file.length
-                    });
+                // Skip hidden files and README
+                if (file.name.indexOf('.') === 0 || file.name.toLowerCase() === 'readme.md') {
+                    continue;
                 }
+
+                var fileType = '';
+                var nameParts = file.name.split('.');
+                if (nameParts.length > 1) {
+                    fileType = nameParts[nameParts.length - 1].toLowerCase();
+                }
+
+                files.push({
+                    name: file.name,
+                    path: file.fsName,
+                    type: fileType,
+                    size: file.length
+                });
             }
         }
 
@@ -326,6 +330,78 @@ function scanProjectsFolder() {
             files: files,
             count: files.length
         });
+
+    } catch (e) {
+        return JSON.stringify({
+            error: e.toString()
+        });
+    }
+}
+
+/**
+ * Get detailed information about a project file (.pack/.aep)
+ * @param {string} filePath - Path to the project file
+ * @return {string} JSON string with project details
+ */
+function getProjectDetails(filePath) {
+    try {
+        var projectFile = new File(filePath);
+
+        if (!projectFile.exists) {
+            return JSON.stringify({
+                error: "File not found"
+            });
+        }
+
+        // Check if it's a valid project file
+        if (!filePath.match(/\.(aep|pack)$/i)) {
+            return JSON.stringify({
+                error: "Not a valid project file"
+            });
+        }
+
+        // Save current project state
+        var currentProject = app.project.file;
+        var hadUnsavedChanges = app.project.dirty;
+
+        // Open the project temporarily (without closing current)
+        var tempProject = app.open(projectFile);
+
+        var projectData = {
+            numItems: app.project.numItems,
+            numComps: 0,
+            numFootage: 0,
+            compositions: []
+        };
+
+        // Collect information about items
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+
+            if (item instanceof CompItem) {
+                projectData.numComps++;
+                projectData.compositions.push({
+                    name: item.name,
+                    width: item.width,
+                    height: item.height,
+                    duration: Math.round(item.duration * 100) / 100,
+                    frameRate: item.frameRate,
+                    numLayers: item.numLayers
+                });
+            } else if (item instanceof FootageItem) {
+                projectData.numFootage++;
+            }
+        }
+
+        // Close the temporary project and restore previous state
+        app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
+
+        // Reopen previous project if there was one
+        if (currentProject !== null) {
+            app.open(currentProject);
+        }
+
+        return JSON.stringify(projectData);
 
     } catch (e) {
         return JSON.stringify({

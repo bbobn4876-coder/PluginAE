@@ -34,21 +34,15 @@
         <!-- Upload Section -->
         <section class="upload-section">
             <div class="upload-container">
-                <input type="file" id="fileInput" accept=".pack" multiple hidden>
-                <button id="uploadBtn" class="btn btn-primary">
-                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="17 8 12 3 7 8"></polyline>
-                        <line x1="12" y1="3" x2="12" y2="15"></line>
-                    </svg>
-                    Upload Pack Files
-                </button>
-                <button id="scanProjectsBtn" class="btn btn-secondary">
+                <button id="scanProjectsBtn" class="btn btn-primary btn-large">
                     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
                     </svg>
-                    Scan Projects Folder
+                    Load Files from Projects Folder
                 </button>
+            </div>
+            <div class="upload-info">
+                <p>Place your files in the <strong>Projects/</strong> folder and click the button above</p>
             </div>
         </section>
 
@@ -111,6 +105,29 @@
                 <!-- Preview Image/GIF -->
                 <div id="previewImage" class="preview-image-container hidden">
                     <img id="previewImg" src="" alt="Preview">
+                </div>
+
+                <!-- Project Contents (for .pack/.aep files) -->
+                <div id="projectContents" class="project-contents hidden">
+                    <h4>Project Contents</h4>
+                    <div class="project-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Compositions:</span>
+                            <span id="projectComps" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Footage Items:</span>
+                            <span id="projectFootage" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Total Items:</span>
+                            <span id="projectItems" class="stat-value">0</span>
+                        </div>
+                    </div>
+                    <div class="compositions-list">
+                        <h5>Compositions</h5>
+                        <div id="compositionsList"></div>
+                    </div>
                 </div>
 
                 <div class="preview-info">

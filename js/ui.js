@@ -13,8 +13,6 @@ const UIManager = {
     init: function() {
         // Cache DOM elements
         this.elements = {
-            uploadBtn: document.getElementById('uploadBtn'),
-            fileInput: document.getElementById('fileInput'),
             scanProjectsBtn: document.getElementById('scanProjectsBtn'),
             searchInput: document.getElementById('searchInput'),
             searchBtn: document.getElementById('searchBtn'),
@@ -42,16 +40,6 @@ const UIManager = {
      * Setup event listeners
      */
     setupEventListeners: function() {
-        // Upload button
-        this.elements.uploadBtn.addEventListener('click', () => {
-            this.elements.fileInput.click();
-        });
-
-        // File input change
-        this.elements.fileInput.addEventListener('change', (e) => {
-            this.handleFileUpload(e.target.files);
-        });
-
         // Scan Projects folder
         this.elements.scanProjectsBtn.addEventListener('click', () => {
             this.scanProjectsFolder();
@@ -103,24 +91,7 @@ const UIManager = {
     },
 
     /**
-     * Handle file upload
-     */
-    handleFileUpload: function(files) {
-        if (!files || files.length === 0) return;
-
-        const addedPresets = PresetManager.addPresetsFromFiles(files);
-
-        if (addedPresets.length > 0) {
-            this.showNotification(`Added ${addedPresets.length} preset(s)`);
-            this.render();
-        }
-
-        // Reset file input
-        this.elements.fileInput.value = '';
-    },
-
-    /**
-     * Scan Projects folder for JSX and GIF files
+     * Scan Projects folder for all files
      */
     scanProjectsFolder: function() {
         if (window.AEInterface && window.AEInterface.scanProjectsFolder) {
@@ -140,7 +111,7 @@ const UIManager = {
                         this.showNotification(`Loaded ${addedPresets.length} file(s) from Projects folder`);
                         this.render();
                     } else {
-                        this.showNotification('No JSX or GIF files found in Projects folder');
+                        this.showNotification('No files found in Projects folder');
                     }
                 } catch (e) {
                     console.error('Error parsing Projects folder data:', e);
@@ -345,8 +316,81 @@ const UIManager = {
         const group = PresetManager.getGroup(preset.group);
         document.getElementById('previewGroup').textContent = group ? group.name : 'Ungrouped';
 
+        // Load project details for .pack/.aep files
+        const projectContents = document.getElementById('projectContents');
+        if ((preset.fileType === 'pack' || preset.fileType === 'aep') && preset.filePath) {
+            this.loadProjectDetails(preset.filePath);
+        } else {
+            projectContents.classList.add('hidden');
+        }
+
         this.renderPreviewTags(preset);
         this.setupPreviewActions(preset);
+    },
+
+    /**
+     * Load and display project details
+     */
+    loadProjectDetails: function(filePath) {
+        const projectContents = document.getElementById('projectContents');
+
+        if (!window.AEInterface || !window.AEInterface.getProjectDetails) {
+            projectContents.classList.add('hidden');
+            return;
+        }
+
+        // Show loading state
+        projectContents.classList.remove('hidden');
+        document.getElementById('projectComps').textContent = '...';
+        document.getElementById('projectFootage').textContent = '...';
+        document.getElementById('projectItems').textContent = '...';
+        document.getElementById('compositionsList').innerHTML = '<div style="padding: 8px; text-align: center; color: var(--text-secondary);">Loading...</div>';
+
+        window.AEInterface.getProjectDetails(filePath, (result) => {
+            try {
+                const projectData = JSON.parse(result);
+
+                if (projectData.error) {
+                    projectContents.classList.add('hidden');
+                    console.error('Error loading project details:', projectData.error);
+                    return;
+                }
+
+                // Update stats
+                document.getElementById('projectComps').textContent = projectData.numComps || 0;
+                document.getElementById('projectFootage').textContent = projectData.numFootage || 0;
+                document.getElementById('projectItems').textContent = projectData.numItems || 0;
+
+                // Render compositions list
+                const compsList = document.getElementById('compositionsList');
+                compsList.innerHTML = '';
+
+                if (projectData.compositions && projectData.compositions.length > 0) {
+                    projectData.compositions.forEach(comp => {
+                        const compDiv = document.createElement('div');
+                        compDiv.className = 'composition-item';
+
+                        const compName = document.createElement('div');
+                        compName.className = 'composition-name';
+                        compName.textContent = comp.name;
+
+                        const compDetails = document.createElement('div');
+                        compDetails.className = 'composition-details';
+                        compDetails.textContent = `${comp.width}×${comp.height} • ${comp.frameRate}fps • ${comp.duration}s • ${comp.numLayers} layers`;
+
+                        compDiv.appendChild(compName);
+                        compDiv.appendChild(compDetails);
+                        compsList.appendChild(compDiv);
+                    });
+                } else {
+                    compsList.innerHTML = '<div style="padding: 8px; text-align: center; color: var(--text-secondary);">No compositions found</div>';
+                }
+
+            } catch (e) {
+                console.error('Error parsing project details:', e);
+                projectContents.classList.add('hidden');
+            }
+        });
     },
 
     /**

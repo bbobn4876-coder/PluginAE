@@ -34,42 +34,6 @@ const PresetManager = {
     },
 
     /**
-     * Add presets from file upload
-     */
-    addPresetsFromFiles: function(files) {
-        const addedPresets = [];
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-
-            // Validate file type - support .pack, .jsx, .gif
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (!['pack', 'jsx', 'gif'].includes(ext)) {
-                console.warn('Skipping unsupported file:', file.name);
-                continue;
-            }
-
-            const preset = {
-                name: file.name,
-                fileName: file.name,
-                filePath: file.path || '',
-                fileSize: file.size,
-                fileType: ext,
-                group: 'ungrouped',
-                tags: [],
-                dateAdded: new Date().toISOString(),
-                source: 'upload'
-            };
-
-            const savedPreset = StorageManager.addPreset(preset);
-            addedPresets.push(savedPreset);
-        }
-
-        this.loadPresets();
-        return addedPresets;
-    },
-
-    /**
      * Load presets from Projects folder
      */
     loadFromProjectsFolder: function(filesData) {

@@ -154,6 +154,19 @@ window.AEInterface = {
     scanProjectsFolder: function(callback) {
         const script = 'scanProjectsFolder()';
         this.evalScript(script, callback);
+    },
+
+    /**
+     * Get detailed information about a project file
+     */
+    getProjectDetails: function(filePath, callback) {
+        if (!filePath) {
+            console.error('No file path provided');
+            return;
+        }
+
+        const script = `getProjectDetails("${filePath}")`;
+        this.evalScript(script, callback);
     }
 };
 
@@ -245,29 +258,3 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-/**
- * Handle drag and drop
- */
-document.addEventListener('dragover', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-});
-
-document.addEventListener('drop', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!AuthManager.isAuthenticated()) return;
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-        // Filter for .pack files
-        const packFiles = Array.from(files).filter(file =>
-            file.name.toLowerCase().endsWith('.pack')
-        );
-
-        if (packFiles.length > 0) {
-            UIManager.handleFileUpload(packFiles);
-        }
-    }
-});

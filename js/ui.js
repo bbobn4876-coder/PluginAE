@@ -15,6 +15,7 @@ const UIManager = {
         this.elements = {
             uploadBtn: document.getElementById('uploadBtn'),
             fileInput: document.getElementById('fileInput'),
+            scanProjectsBtn: document.getElementById('scanProjectsBtn'),
             searchInput: document.getElementById('searchInput'),
             searchBtn: document.getElementById('searchBtn'),
             filterBtn: document.getElementById('filterBtn'),
@@ -49,6 +50,11 @@ const UIManager = {
         // File input change
         this.elements.fileInput.addEventListener('change', (e) => {
             this.handleFileUpload(e.target.files);
+        });
+
+        // Scan Projects folder
+        this.elements.scanProjectsBtn.addEventListener('click', () => {
+            this.scanProjectsFolder();
         });
 
         // Search
@@ -111,6 +117,39 @@ const UIManager = {
 
         // Reset file input
         this.elements.fileInput.value = '';
+    },
+
+    /**
+     * Scan Projects folder for JSX and GIF files
+     */
+    scanProjectsFolder: function() {
+        if (window.AEInterface && window.AEInterface.scanProjectsFolder) {
+            this.showNotification('Scanning Projects folder...');
+
+            window.AEInterface.scanProjectsFolder((result) => {
+                try {
+                    const filesData = JSON.parse(result);
+
+                    if (filesData.error) {
+                        this.showNotification('Error: ' + filesData.error);
+                        return;
+                    }
+
+                    if (filesData.files && filesData.files.length > 0) {
+                        const addedPresets = PresetManager.loadFromProjectsFolder(filesData.files);
+                        this.showNotification(`Loaded ${addedPresets.length} file(s) from Projects folder`);
+                        this.render();
+                    } else {
+                        this.showNotification('No JSX or GIF files found in Projects folder');
+                    }
+                } catch (e) {
+                    console.error('Error parsing Projects folder data:', e);
+                    this.showNotification('Error scanning Projects folder');
+                }
+            });
+        } else {
+            this.showNotification('CEP interface not available');
+        }
     },
 
     /**
@@ -285,7 +324,21 @@ const UIManager = {
         this.currentPreview = preset;
         this.elements.previewSection.classList.remove('hidden');
 
+        // Show preview image for GIF files
+        const previewImageContainer = document.getElementById('previewImage');
+        const previewImg = document.getElementById('previewImg');
+
+        if (preset.fileType === 'gif' && preset.filePath) {
+            previewImageContainer.classList.remove('hidden');
+            // For CEP, we need to use file:// protocol or convert to base64
+            previewImg.src = 'file:///' + preset.filePath.replace(/\\/g, '/');
+        } else {
+            previewImageContainer.classList.add('hidden');
+            previewImg.src = '';
+        }
+
         document.getElementById('previewFileName').textContent = preset.fileName;
+        document.getElementById('previewFileType').textContent = preset.fileType ? preset.fileType.toUpperCase() : 'Unknown';
         document.getElementById('previewFileSize').textContent = PresetManager.formatFileSize(preset.fileSize);
         document.getElementById('previewDate').textContent = PresetManager.formatDate(preset.dateAdded);
 
@@ -412,10 +465,40 @@ const UIManager = {
      * Open preset in After Effects
      */
     openInAfterEffects: function(preset) {
-        if (window.AEInterface) {
-            window.AEInterface.openProject(preset.filePath);
-        } else {
+        if (!window.AEInterface || !window.AEInterface.csInterface) {
             this.showNotification('After Effects integration not available');
+            return;
+        }
+
+        if (!preset.filePath) {
+            this.showNotification('No file path available');
+            return;
+        }
+
+        // Handle different file types
+        if (preset.fileType === 'jsx') {
+            // Execute JSX script
+            this.showNotification('Executing JSX script...');
+            window.AEInterface.executeJSX(preset.filePath, (result) => {
+                if (result && result !== 'undefined') {
+                    if (result.includes('Error') || result.includes('error')) {
+                        this.showNotification('JSX Error: ' + result);
+                    } else {
+                        this.showNotification('JSX executed successfully');
+                    }
+                } else {
+                    this.showNotification('JSX executed');
+                }
+            });
+        } else if (preset.fileType === 'pack') {
+            // Open PACK file as project
+            this.showNotification('Opening project...');
+            window.AEInterface.openProject(preset.filePath);
+        } else if (preset.fileType === 'gif') {
+            // GIF files can't be opened directly, maybe import?
+            this.showNotification('GIF files are for preview only');
+        } else {
+            this.showNotification('Unknown file type: ' + preset.fileType);
         }
     },
 

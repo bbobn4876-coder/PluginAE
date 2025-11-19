@@ -46,6 +46,8 @@ body {
 .upload-container {
     display: flex;
     justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* Search Section */
@@ -502,4 +504,115 @@ body {
 
 .empty-state-text {
     font-size: 14px;
+}
+
+/* Login Screen */
+.login-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--primary-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.login-screen.hidden {
+    display: none;
+}
+
+.login-container {
+    width: 90%;
+    max-width: 350px;
+    padding: 30px;
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.login-header h1 {
+    font-size: 24px;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.login-header p {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.login-input {
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.login-error {
+    padding: 8px 12px;
+    background: rgba(231, 76, 60, 0.1);
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    color: #e74c3c;
+    font-size: 12px;
+    text-align: center;
+}
+
+.login-error.hidden {
+    display: none;
+}
+
+/* Preview Image Container */
+.preview-image-container {
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--input-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 300px;
+}
+
+.preview-image-container.hidden {
+    display: none;
+}
+
+.preview-image-container img {
+    max-width: 100%;
+    max-height: 300px;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Hidden class utility */
+.hidden {
+    display: none !important;
 }

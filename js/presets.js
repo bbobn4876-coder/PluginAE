@@ -42,9 +42,10 @@ const PresetManager = {
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
 
-            // Validate file type
-            if (!file.name.endsWith('.aep')) {
-                console.warn('Skipping non-AEP file:', file.name);
+            // Validate file type - support .pack, .jsx, .gif
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['pack', 'jsx', 'gif'].includes(ext)) {
+                console.warn('Skipping unsupported file:', file.name);
                 continue;
             }
 
@@ -53,14 +54,58 @@ const PresetManager = {
                 fileName: file.name,
                 filePath: file.path || '',
                 fileSize: file.size,
+                fileType: ext,
                 group: 'ungrouped',
                 tags: [],
-                dateAdded: new Date().toISOString()
+                dateAdded: new Date().toISOString(),
+                source: 'upload'
             };
 
             const savedPreset = StorageManager.addPreset(preset);
             addedPresets.push(savedPreset);
         }
+
+        this.loadPresets();
+        return addedPresets;
+    },
+
+    /**
+     * Load presets from Projects folder
+     */
+    loadFromProjectsFolder: function(filesData) {
+        if (!filesData || !Array.isArray(filesData)) {
+            console.warn('Invalid files data from Projects folder');
+            return [];
+        }
+
+        const addedPresets = [];
+
+        filesData.forEach(fileInfo => {
+            // Check if preset already exists
+            const existing = this.currentPresets.find(p =>
+                p.filePath === fileInfo.path && p.source === 'projects'
+            );
+
+            if (existing) {
+                console.log('Preset already loaded:', fileInfo.name);
+                return;
+            }
+
+            const preset = {
+                name: fileInfo.name,
+                fileName: fileInfo.name,
+                filePath: fileInfo.path,
+                fileSize: fileInfo.size || 0,
+                fileType: fileInfo.type,
+                group: 'ungrouped',
+                tags: [],
+                dateAdded: new Date().toISOString(),
+                source: 'projects'
+            };
+
+            const savedPreset = StorageManager.addPreset(preset);
+            addedPresets.push(savedPreset);
+        });
 
         this.loadPresets();
         return addedPresets;

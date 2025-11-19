@@ -7,7 +7,7 @@
 
 /**
  * Open an After Effects project file
- * @param {string} filePath - Full path to the .aep file
+ * @param {string} filePath - Full path to the project file (.aep or .pack)
  * @return {string} "true" on success, error message on failure
  */
 function openAEProject(filePath) {
@@ -19,9 +19,9 @@ function openAEProject(filePath) {
             return "Error: File not found - " + filePath;
         }
 
-        // Check file extension
-        if (!filePath.match(/\.aep$/i)) {
-            return "Error: Not a valid AEP file";
+        // Check file extension - support both .aep and .pack
+        if (!filePath.match(/\.(aep|pack)$/i)) {
+            return "Error: Not a valid project file (must be .aep or .pack)";
         }
 
         // Close current project if needed (with confirmation)
@@ -246,6 +246,86 @@ function getSystemInfo() {
         };
 
         return JSON.stringify(info);
+
+    } catch (e) {
+        return JSON.stringify({
+            error: e.toString()
+        });
+    }
+}
+
+/**
+ * Execute a JSX script file
+ * @param {string} filePath - Full path to the .jsx file
+ * @return {string} Result of script execution
+ */
+function executeJSXFile(filePath) {
+    try {
+        var jsxFile = new File(filePath);
+
+        if (!jsxFile.exists) {
+            return "Error: JSX file not found - " + filePath;
+        }
+
+        // Read and evaluate the JSX file
+        jsxFile.open('r');
+        var jsxContent = jsxFile.read();
+        jsxFile.close();
+
+        // Execute the script content
+        var result = eval(jsxContent);
+
+        return result ? result.toString() : "true";
+
+    } catch (e) {
+        return "Error: " + e.toString();
+    }
+}
+
+/**
+ * Scan Projects folder for JSX and GIF files
+ * @return {string} JSON string with files array
+ */
+function scanProjectsFolder() {
+    try {
+        // Get extension path
+        var extensionPath = new File($.fileName).parent.parent.fsName;
+        var projectsFolder = new Folder(extensionPath + "/Projects");
+
+        if (!projectsFolder.exists) {
+            return JSON.stringify({
+                error: "Projects folder not found at: " + projectsFolder.fsName
+            });
+        }
+
+        var files = [];
+        var allFiles = projectsFolder.getFiles();
+
+        for (var i = 0; i < allFiles.length; i++) {
+            var file = allFiles[i];
+
+            // Check if it's a file (not a folder)
+            if (file instanceof File) {
+                var fileName = file.name.toLowerCase();
+
+                // Check for .jsx or .gif extensions
+                if (fileName.match(/\.(jsx|gif)$/i)) {
+                    var fileType = fileName.split('.').pop().toLowerCase();
+
+                    files.push({
+                        name: file.name,
+                        path: file.fsName,
+                        type: fileType,
+                        size: file.length
+                    });
+                }
+            }
+        }
+
+        return JSON.stringify({
+            files: files,
+            count: files.length
+        });
 
     } catch (e) {
         return JSON.stringify({

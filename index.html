@@ -8,7 +8,23 @@
     <link rel="stylesheet" href="css/theme.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>AEP Preview</h1>
+                <p>Enter password to access</p>
+            </div>
+            <div class="login-form">
+                <input type="password" id="passwordInput" class="login-input" placeholder="Password" autocomplete="off">
+                <button id="loginBtn" class="btn btn-primary btn-block">Login</button>
+                <div id="loginError" class="login-error hidden">Incorrect password</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="container hidden">
         <!-- Header Section -->
         <header class="header">
             <h1 class="title">AEP Preview</h1>
@@ -18,14 +34,20 @@
         <!-- Upload Section -->
         <section class="upload-section">
             <div class="upload-container">
-                <input type="file" id="fileInput" accept=".aep" multiple hidden>
+                <input type="file" id="fileInput" accept=".pack" multiple hidden>
                 <button id="uploadBtn" class="btn btn-primary">
                     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    Upload AEP Files
+                    Upload Pack Files
+                </button>
+                <button id="scanProjectsBtn" class="btn btn-secondary">
+                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
+                    </svg>
+                    Scan Projects Folder
                 </button>
             </div>
         </section>
@@ -86,10 +108,19 @@
                 </button>
             </div>
             <div id="previewContent" class="preview-content">
+                <!-- Preview Image/GIF -->
+                <div id="previewImage" class="preview-image-container hidden">
+                    <img id="previewImg" src="" alt="Preview">
+                </div>
+
                 <div class="preview-info">
                     <div class="info-row">
                         <span class="label">File Name:</span>
                         <span id="previewFileName" class="value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">File Type:</span>
+                        <span id="previewFileType" class="value"></span>
                     </div>
                     <div class="info-row">
                         <span class="label">File Size:</span>

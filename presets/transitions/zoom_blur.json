@@ -1,0 +1,13 @@
+{
+  "name": "Zoom Blur Transition",
+  "type": "transition",
+  "id": 102,
+  "default_intensity": 0.7,
+  "description": "Radial zoom blur transition effect",
+  "parameters": {
+    "blur_radius": 15,
+    "center_x": 0.5,
+    "center_y": 0.5,
+    "zoom_factor": 1.2
+  }
+}

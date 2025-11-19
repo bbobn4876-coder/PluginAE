@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PluginAE Preset Schema",
+  "description": "Schema for defining custom presets for PluginAE",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Preset name displayed in After Effects"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["transition", "effect", "color", "custom"],
+      "description": "Type of preset"
+    },
+    "id": {
+      "type": "integer",
+      "description": "Unique preset identifier"
+    },
+    "default_intensity": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Default intensity value (0.0 to 1.0)"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Custom parameters for the preset",
+      "properties": {
+        "color_tint": {
+          "type": "object",
+          "properties": {
+            "r": {"type": "number", "minimum": 0, "maximum": 1},
+            "g": {"type": "number", "minimum": 0, "maximum": 1},
+            "b": {"type": "number", "minimum": 0, "maximum": 1}
+          }
+        },
+        "blur_radius": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "contrast": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "saturation": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 2
+        }
+      }
+    }
+  },
+  "required": ["name", "type", "id"]
+}

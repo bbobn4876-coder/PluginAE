@@ -1,0 +1,31 @@
+{
+  "name": "Teal and Orange",
+  "type": "color",
+  "id": 303,
+  "default_intensity": 0.75,
+  "description": "Popular Hollywood teal and orange look",
+  "parameters": {
+    "color_tint": {
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0
+    },
+    "contrast": 0.2,
+    "saturation": 1.2,
+    "shadows": {
+      "r": 0.7,
+      "g": 1.0,
+      "b": 1.15
+    },
+    "highlights": {
+      "r": 1.25,
+      "g": 1.1,
+      "b": 0.85
+    },
+    "midtones": {
+      "r": 0.95,
+      "g": 1.05,
+      "b": 1.0
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "Film Grain",
+  "type": "effect",
+  "id": 202,
+  "default_intensity": 0.3,
+  "description": "Adds realistic film grain texture",
+  "parameters": {
+    "grain_size": 1.0,
+    "grain_intensity": 0.15,
+    "color_noise": 0.05,
+    "highlights_softness": 0.2
+  }
+}

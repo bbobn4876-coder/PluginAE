@@ -1,0 +1,26 @@
+{
+  "name": "Cinematic Blue",
+  "type": "color",
+  "id": 301,
+  "default_intensity": 0.7,
+  "description": "Cool blue cinematic color grade",
+  "parameters": {
+    "color_tint": {
+      "r": 0.85,
+      "g": 0.95,
+      "b": 1.15
+    },
+    "contrast": 0.15,
+    "saturation": 0.9,
+    "shadows": {
+      "r": 0.8,
+      "g": 0.9,
+      "b": 1.2
+    },
+    "highlights": {
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.1
+    }
+  }
+}

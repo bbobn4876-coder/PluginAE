@@ -1,0 +1,13 @@
+{
+  "name": "Cinematic Vignette",
+  "type": "effect",
+  "id": 201,
+  "default_intensity": 0.6,
+  "description": "Darkens edges for cinematic look",
+  "parameters": {
+    "inner_radius": 0.4,
+    "outer_radius": 1.0,
+    "feather": 0.5,
+    "roundness": 1.0
+  }
+}

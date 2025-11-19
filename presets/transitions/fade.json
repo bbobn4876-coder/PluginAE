@@ -1,0 +1,11 @@
+{
+  "name": "Smooth Fade",
+  "type": "transition",
+  "id": 101,
+  "default_intensity": 0.5,
+  "description": "Smooth fade in/out transition",
+  "parameters": {
+    "ease_type": "cubic",
+    "direction": "in"
+  }
+}

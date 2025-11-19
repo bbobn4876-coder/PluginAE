@@ -167,6 +167,19 @@ window.AEInterface = {
 
         const script = `getProjectDetails("${filePath}")`;
         this.evalScript(script, callback);
+    },
+
+    /**
+     * Apply preset/effect to active composition
+     */
+    applyPreset: function(filePath, callback) {
+        if (!filePath) {
+            console.error('No file path provided');
+            return;
+        }
+
+        const script = `applyPreset("${filePath}")`;
+        this.evalScript(script, callback);
     }
 };
 

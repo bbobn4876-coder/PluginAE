@@ -141,6 +141,11 @@ body {
     border: 1px solid var(--border-color);
 }
 
+.btn-success {
+    background: #27ae60;
+    color: white;
+}
+
 .btn-danger {
     background: #e74c3c;
     color: white;
@@ -701,6 +706,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.composition-item:hover {
+    background: var(--hover-bg);
+    border-color: var(--accent-color);
+    transform: translateX(2px);
 }
 
 .composition-name {
@@ -712,6 +725,29 @@ body {
 .composition-details {
     font-size: 11px;
     color: var(--text-secondary);
+}
+
+/* Notification Toast */
+.notification-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 13px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+    max-width: 300px;
+}
+
+.notification-toast.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Hidden class utility */

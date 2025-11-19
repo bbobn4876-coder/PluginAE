@@ -105,20 +105,34 @@ Click any preset to see detailed information:
 
 ---
 
-## Opening Files in After Effects
+## Working with Files in After Effects
+
+The plugin provides two ways to use your files:
+
+### Apply to Active Composition
+
+The **"Apply to Active Composition"** button applies the preset/effect to your currently active composition:
+
+- **For .pack/.aep Files:** Imports the project contents into your current project
+- **For .jsx Files:** Executes the script in the context of the active composition
+- **Requirement:** You must have an active composition selected in After Effects
+- **Result:** Adds the preset/effect without closing your current project
+
+### Open in After Effects
 
 The **"Open in After Effects"** button behaves differently based on file type:
 
-### .pack Files
+#### .pack Files
 - Opens the file as an After Effects project
 - Prompts to save current project if there are unsaved changes
+- **Preview:** Click on any composition in the preview panel to see its details
 
-### .jsx Files
+#### .jsx Files
 - Executes the ExtendScript in After Effects
 - Shows success/error notification
 - Can create compositions, add layers, run automation, etc.
 
-### .gif Files
+#### .gif Files
 - Shows "Preview only" message
 - GIF files are for visual reference only
 

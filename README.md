@@ -9,10 +9,10 @@ A powerful CEP (Common Extensibility Platform) extension for Adobe After Effects
 - **Session Management**: Stays authenticated during your After Effects session
 
 ### File Management
-- **Multiple File Types**: Support for `.pack` project files, `.jsx` scripts, and `.gif` previews
-- **File Upload**: Upload and manage multiple `.pack` files via button or drag & drop
-- **Projects Folder**: Automatic scanning of `.jsx` and `.gif` files from Projects directory
-- **Smart Preview**: Visual preview for GIF files, detailed info for all types
+- **All File Types**: Support for `.pack`/`.aep` project files, `.jsx` scripts, `.gif` previews, and more
+- **Projects Folder**: Automatic recursive scanning of ALL file types from Projects directory
+- **Automatic Grouping**: Files are automatically grouped by folder names with smart color coding
+- **Smart Preview**: Visual preview for images, detailed project contents for .pack/.aep files
 
 ### Organization
 - **Preset Grouping**: Organize presets into custom groups with color coding
@@ -21,15 +21,19 @@ A powerful CEP (Common Extensibility Platform) extension for Adobe After Effects
 - **Filter by Group**: Dropdown filter to view specific groups
 
 ### Integration
+- **Apply to Composition**: Apply presets/effects directly to active composition without closing your project
 - **JSX Script Execution**: Run ExtendScript files directly in After Effects
-- **Project Loading**: Open `.pack` files as After Effects projects
+- **Project Loading**: Open `.pack`/`.aep` files as After Effects projects
+- **Project Preview**: View composition details, statistics, and contents for .pack/.aep files
 - **Smart File Handling**: Different actions based on file type
 
 ### User Experience
 - **Dark Theme**: Seamlessly integrates with After Effects' dark interface
 - **Local Storage**: All data persists between sessions
+- **Interactive Notifications**: Visual toast notifications for all actions
+- **Clickable Compositions**: Click on compositions in preview to view details
 - **Keyboard Shortcuts**: Quick access with Ctrl/Cmd+F and Escape
-- **Drag & Drop**: Drag files directly into the panel
+- **Hover Effects**: Interactive UI elements with visual feedback
 
 ## Project Structure
 
@@ -151,11 +155,30 @@ Enter the password when the plugin opens. You'll stay logged in for your After E
 2. Search works for both preset names and tags
 3. Use the group filter dropdown to filter by group
 
-### Opening in After Effects
+### Working with Files in After Effects
+
+The plugin provides two main ways to use your files:
+
+#### Apply to Active Composition
+
+The **"Apply to Active Composition"** button applies the preset/effect to your currently active composition:
+
+- **For .pack/.aep files**: Imports the project contents into your current project
+- **For .jsx files**: Executes the script in the context of the active composition
+- **Requirement**: You must have an active composition selected in After Effects
+- **Result**: Adds the preset/effect without closing your current project
+
+Steps:
+1. Open or create a composition in After Effects
+2. Select the composition to make it active
+3. In the plugin, click on any preset to open the preview panel
+4. Click **"Apply to Active Composition"**
+
+#### Open in After Effects
 
 The **"Open in After Effects"** button works differently based on file type:
 
-- **`.pack` files**: Opens as an After Effects project
+- **`.pack`/`.aep` files**: Opens as an After Effects project
 - **`.jsx` files**: Executes the ExtendScript in After Effects
 - **`.gif` files**: Preview only (shows notification)
 
@@ -166,10 +189,12 @@ Steps:
 
 ### Preview Panel
 
-- **GIF files**: Shows animated preview image
-- **All files**: Display file name, type, size, date, group
+- **GIF/Image files**: Shows animated/static preview image
+- **PACK/AEP files**: Shows project contents with composition details, statistics, and clickable compositions
+- **All files**: Display file name, type, size, date, group, and folder path
 - **Tags**: Add or remove tags
-- **Actions**: Open/Execute in AE or delete
+- **Actions**: Apply to composition, open/execute in AE, or delete
+- **Interactive**: Click on compositions to view detailed information
 
 ### Keyboard Shortcuts
 
@@ -295,6 +320,17 @@ For issues, questions, or suggestions:
 - Check Adobe CEP documentation: https://github.com/Adobe-CEP/CEP-Resources
 
 ## Changelog
+
+### Version 2.0.0 (Latest)
+- **Apply to Composition**: Apply presets directly to active composition
+- **Recursive Folder Scanning**: Scan all subfolders in Projects directory
+- **Automatic Grouping**: Files automatically grouped by folder names with smart color coding
+- **All File Types Support**: Support for all file formats, not just .pack/.jsx/.gif
+- **Project Content Preview**: View compositions, statistics, and details for .pack/.aep files
+- **Interactive Notifications**: Visual toast notifications for all actions
+- **Clickable Compositions**: Click on compositions in preview to view details
+- **Improved UI**: Hover effects and better visual feedback
+- **Enhanced Preview Panel**: Shows folder paths and project contents
 
 ### Version 1.0.0 (Initial Release)
 - File upload and management

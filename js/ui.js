@@ -386,6 +386,7 @@ const UIManager = {
                     projectData.compositions.forEach(comp => {
                         const compDiv = document.createElement('div');
                         compDiv.className = 'composition-item';
+                        compDiv.title = 'Click to view composition details';
 
                         const compName = document.createElement('div');
                         compName.className = 'composition-name';
@@ -397,6 +398,12 @@ const UIManager = {
 
                         compDiv.appendChild(compName);
                         compDiv.appendChild(compDetails);
+
+                        // Add click handler
+                        compDiv.addEventListener('click', () => {
+                            this.showCompositionInfo(comp);
+                        });
+
                         compsList.appendChild(compDiv);
                     });
                 } else {
@@ -463,8 +470,13 @@ const UIManager = {
      * Setup preview actions
      */
     setupPreviewActions: function(preset) {
+        const applyBtn = document.getElementById('applyToComp');
         const openBtn = document.getElementById('openInAE');
         const deleteBtn = document.getElementById('deletePreset');
+
+        applyBtn.onclick = () => {
+            this.applyToComposition(preset);
+        };
 
         openBtn.onclick = () => {
             this.openInAfterEffects(preset);
@@ -523,6 +535,32 @@ const UIManager = {
     },
 
     /**
+     * Apply preset to active composition
+     */
+    applyToComposition: function(preset) {
+        if (!window.AEInterface || !window.AEInterface.csInterface) {
+            this.showNotification('After Effects integration not available');
+            return;
+        }
+
+        if (!preset.filePath) {
+            this.showNotification('No file path available');
+            return;
+        }
+
+        this.showNotification('Applying to composition...');
+        window.AEInterface.applyPreset(preset.filePath, (result) => {
+            if (result === 'true') {
+                this.showNotification('Applied successfully!');
+            } else if (result.includes('Error')) {
+                this.showNotification(result);
+            } else {
+                this.showNotification('Applied: ' + result);
+            }
+        });
+    },
+
+    /**
      * Open preset in After Effects
      */
     openInAfterEffects: function(preset) {
@@ -564,11 +602,34 @@ const UIManager = {
     },
 
     /**
+     * Show composition information
+     */
+    showCompositionInfo: function(comp) {
+        const details = [
+            `Composition: ${comp.name}`,
+            `Resolution: ${comp.width}×${comp.height}px`,
+            `Frame Rate: ${comp.frameRate}fps`,
+            `Duration: ${comp.duration}s`,
+            `Layers: ${comp.numLayers}`
+        ];
+        this.showNotification(details.join(' • '));
+    },
+
+    /**
      * Show notification
      */
     showNotification: function(message) {
-        // Simple console log for now
-        // Could be enhanced with a toast notification system
         console.log('Notification:', message);
+
+        const toast = document.getElementById('notificationToast');
+        if (toast) {
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
     }
 };

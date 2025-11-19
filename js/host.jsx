@@ -387,50 +387,155 @@ function getProjectDetails(filePath) {
 
         // Save current project state
         var currentProject = app.project.file;
-        var hadUnsavedChanges = app.project.dirty;
+        var currentProjectPath = currentProject ? currentProject.fsName : null;
 
-        // Open the project temporarily (without closing current)
-        var tempProject = app.open(projectFile);
-
-        var projectData = {
-            numItems: app.project.numItems,
-            numComps: 0,
-            numFootage: 0,
-            compositions: []
-        };
-
-        // Collect information about items
-        for (var i = 1; i <= app.project.numItems; i++) {
-            var item = app.project.item(i);
-
-            if (item instanceof CompItem) {
-                projectData.numComps++;
-                projectData.compositions.push({
-                    name: item.name,
-                    width: item.width,
-                    height: item.height,
-                    duration: Math.round(item.duration * 100) / 100,
-                    frameRate: item.frameRate,
-                    numLayers: item.numLayers
-                });
-            } else if (item instanceof FootageItem) {
-                projectData.numFootage++;
+        try {
+            // Close current project without saving
+            if (currentProject !== null) {
+                app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
             }
+
+            // Open the target project
+            app.open(projectFile);
+
+            var projectData = {
+                numItems: app.project.numItems,
+                numComps: 0,
+                numFootage: 0,
+                compositions: []
+            };
+
+            // Collect information about items
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+
+                if (item instanceof CompItem) {
+                    projectData.numComps++;
+                    projectData.compositions.push({
+                        name: item.name,
+                        width: item.width,
+                        height: item.height,
+                        duration: Math.round(item.duration * 100) / 100,
+                        frameRate: item.frameRate,
+                        numLayers: item.numLayers
+                    });
+                } else if (item instanceof FootageItem) {
+                    projectData.numFootage++;
+                }
+            }
+
+            // Close the analyzed project
+            app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
+
+            // Reopen previous project if there was one
+            if (currentProjectPath !== null) {
+                app.open(new File(currentProjectPath));
+            }
+
+            return JSON.stringify(projectData);
+
+        } catch (innerError) {
+            // Try to restore previous project even if error occurred
+            if (currentProjectPath !== null) {
+                try {
+                    app.open(new File(currentProjectPath));
+                } catch (e) {
+                    // Ignore restoration errors
+                }
+            }
+            throw innerError;
         }
-
-        // Close the temporary project and restore previous state
-        app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
-
-        // Reopen previous project if there was one
-        if (currentProject !== null) {
-            app.open(currentProject);
-        }
-
-        return JSON.stringify(projectData);
 
     } catch (e) {
         return JSON.stringify({
             error: e.toString()
         });
+    }
+}
+
+/**
+ * Apply preset/effect to active composition
+ * @param {string} filePath - Path to the preset file (.jsx, .pack, .aep)
+ * @return {string} "true" on success, error message on failure
+ */
+function applyPreset(filePath) {
+    try {
+        var presetFile = new File(filePath);
+
+        if (!presetFile.exists) {
+            return "Error: File not found - " + filePath;
+        }
+
+        var activeComp = app.project.activeItem;
+
+        if (!(activeComp instanceof CompItem)) {
+            return "Error: No active composition. Please select a composition first.";
+        }
+
+        // Get file extension
+        var fileType = filePath.split('.').pop().toLowerCase();
+
+        if (fileType === 'jsx') {
+            // Execute JSX file
+            return executeJSXFile(filePath);
+
+        } else if (fileType === 'pack' || fileType === 'aep') {
+            // Import project file into current project
+            var importOptions = new ImportOptions(presetFile);
+
+            if (importOptions.canImportAs(ImportAsType.PROJECT)) {
+                // Import as project
+                app.project.importFile(importOptions);
+                return "true";
+            } else {
+                return "Error: Cannot import this file type";
+            }
+
+        } else {
+            return "Error: Unsupported preset file type: " + fileType;
+        }
+
+    } catch (e) {
+        return "Error: " + e.toString();
+    }
+}
+
+/**
+ * Render composition preview to image sequence or movie
+ * @param {string} compName - Name of the composition to render
+ * @param {string} outputPath - Path where to save the preview
+ * @return {string} "true" on success, error message on failure
+ */
+function renderPreview(compName, outputPath) {
+    try {
+        // Find composition by name
+        var comp = null;
+
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+            if (item instanceof CompItem && item.name === compName) {
+                comp = item;
+                break;
+            }
+        }
+
+        if (!comp) {
+            return "Error: Composition not found: " + compName;
+        }
+
+        // Add to render queue
+        var renderQueueItem = app.project.renderQueue.items.add(comp);
+
+        // Set output path
+        var outputModule = renderQueueItem.outputModule(1);
+        outputModule.file = new File(outputPath);
+
+        // Render
+        app.project.renderQueue.render();
+
+        return "true";
+
+    } catch (e) {
+        return "Error: " + e.toString();
     }
 }

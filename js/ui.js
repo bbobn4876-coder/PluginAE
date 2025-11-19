@@ -18,6 +18,7 @@ const UIManager = {
             videoPlaceholder: document.getElementById('videoPlaceholder'),
             videoPlayer: document.getElementById('videoPlayer'),
             imagePreview: document.getElementById('imagePreview'),
+            youtubePreview: document.getElementById('youtubePreview'),
             currentFileName: document.getElementById('currentFileName'),
             applyToComp: document.getElementById('applyToComp'),
             openInAE: document.getElementById('openInAE'),
@@ -282,16 +283,37 @@ const UIManager = {
     showPreview: function(fileItem) {
         const videoPlayer = this.elements.videoPlayer;
         const imagePreview = this.elements.imagePreview;
+        const youtubePreview = this.elements.youtubePreview;
         const placeholder = this.elements.videoPlaceholder;
 
         // Hide all preview elements
         videoPlayer.classList.add('hidden');
         imagePreview.classList.add('hidden');
+        youtubePreview.classList.add('hidden');
         placeholder.classList.add('hidden');
 
         const ext = fileItem.fileType?.toLowerCase();
 
-        // Show appropriate preview
+        // Check for YouTube preview in info.json first
+        if (fileItem.info && fileItem.info.videoPreview) {
+            // Extract src from iframe HTML if needed
+            let videoSrc = fileItem.info.videoPreview;
+
+            // If it's an iframe HTML string, extract the src attribute
+            if (videoSrc.includes('<iframe')) {
+                const srcMatch = videoSrc.match(/src="([^"]+)"/);
+                if (srcMatch && srcMatch[1]) {
+                    videoSrc = srcMatch[1];
+                }
+            }
+
+            // Show YouTube video preview
+            youtubePreview.src = videoSrc;
+            youtubePreview.classList.remove('hidden');
+            return;
+        }
+
+        // Show appropriate preview based on file type
         if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
             // Image preview
             imagePreview.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
@@ -317,10 +339,12 @@ const UIManager = {
     clearPreview: function() {
         this.elements.videoPlayer.classList.add('hidden');
         this.elements.imagePreview.classList.add('hidden');
+        this.elements.youtubePreview.classList.add('hidden');
         this.elements.videoPlaceholder.classList.remove('hidden');
 
         this.elements.videoPlayer.src = '';
         this.elements.imagePreview.src = '';
+        this.elements.youtubePreview.src = '';
         this.elements.currentFileName.textContent = 'No file selected';
 
         this.elements.applyToComp.disabled = true;

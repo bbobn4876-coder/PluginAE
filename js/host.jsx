@@ -301,9 +301,27 @@ function scanProjectsFolder() {
         var files = [];
         var folders = [];
 
+        // Helper function to read info.json from folder
+        function readInfoJson(folder) {
+            var infoFile = new File(folder.fsName + "/info.json");
+            if (infoFile.exists) {
+                infoFile.open("r");
+                var content = infoFile.read();
+                infoFile.close();
+
+                try {
+                    return JSON.parse(content);
+                } catch (e) {
+                    return null;
+                }
+            }
+            return null;
+        }
+
         // Recursive function to scan folders
         function scanFolder(folder, relativePath) {
             var contents = folder.getFiles();
+            var infoData = readInfoJson(folder);
 
             for (var i = 0; i < contents.length; i++) {
                 var item = contents[i];
@@ -312,11 +330,13 @@ function scanProjectsFolder() {
                     // It's a folder - scan it recursively
                     var folderName = item.name;
                     var newRelativePath = relativePath ? relativePath + "/" + folderName : folderName;
+                    var folderInfo = readInfoJson(item);
 
                     // Add folder to folders array
                     folders.push({
                         name: folderName,
-                        path: newRelativePath
+                        path: newRelativePath,
+                        info: folderInfo
                     });
 
                     // Scan this folder recursively
@@ -324,8 +344,10 @@ function scanProjectsFolder() {
 
                 } else if (item instanceof File) {
                     // It's a file
-                    // Skip hidden files and README
-                    if (item.name.indexOf('.') === 0 || item.name.toLowerCase() === 'readme.md') {
+                    // Skip hidden files, README, and info.json
+                    if (item.name.indexOf('.') === 0 ||
+                        item.name.toLowerCase() === 'readme.md' ||
+                        item.name.toLowerCase() === 'info.json') {
                         continue;
                     }
 
@@ -340,7 +362,8 @@ function scanProjectsFolder() {
                         path: item.fsName,
                         type: fileType,
                         size: item.length,
-                        folder: relativePath || '' // Which subfolder this file is in
+                        folder: relativePath || '', // Which subfolder this file is in
+                        info: infoData // Include parent folder's info.json data
                     });
                 }
             }

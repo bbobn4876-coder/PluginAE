@@ -74,7 +74,8 @@ const FileBrowser = {
                         name: folder.name,
                         path: folder.path,
                         fullPath: folder.fullPath || folder.path,
-                        files: []
+                        files: [],
+                        info: folder.info || null
                     });
                 }
             });
@@ -95,7 +96,8 @@ const FileBrowser = {
                         filePath: file.path,
                         fileSize: file.size || 0,
                         fileType: file.type,
-                        folder: file.folder
+                        folder: file.folder,
+                        info: file.info || null
                     });
                 } else if (!folderPath) {
                     // File is in root of Projects folder
@@ -106,7 +108,8 @@ const FileBrowser = {
                         filePath: file.path,
                         fileSize: file.size || 0,
                         fileType: file.type,
-                        folder: ''
+                        folder: '',
+                        info: file.info || null
                     });
                 }
             });

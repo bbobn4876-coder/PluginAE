@@ -1,11 +1,12 @@
 /**
- * UI Manager for AEP Preview Plugin
- * Handles all UI rendering and updates
+ * UI Manager for File Browser
+ * Handles all UI rendering and user interactions
  */
 
 const UIManager = {
     elements: {},
-    currentPreview: null,
+    currentItems: [],
+    selectedItem: null,
 
     /**
      * Initialize UI elements
@@ -13,547 +14,337 @@ const UIManager = {
     init: function() {
         // Cache DOM elements
         this.elements = {
-            scanProjectsBtn: document.getElementById('scanProjectsBtn'),
-            searchInput: document.getElementById('searchInput'),
-            searchBtn: document.getElementById('searchBtn'),
-            filterBtn: document.getElementById('filterBtn'),
-            groupFilter: document.getElementById('groupFilter'),
-            groupsList: document.getElementById('groupsList'),
-            presetsList: document.getElementById('presetsList'),
-            presetCount: document.getElementById('presetCount'),
-            addGroupBtn: document.getElementById('addGroupBtn'),
-            previewSection: document.getElementById('previewSection'),
-            closePreview: document.getElementById('closePreview'),
-            groupModal: document.getElementById('groupModal'),
-            closeGroupModal: document.getElementById('closeGroupModal'),
-            cancelGroupBtn: document.getElementById('cancelGroupBtn'),
-            createGroupBtn: document.getElementById('createGroupBtn'),
-            groupNameInput: document.getElementById('groupNameInput'),
-            groupColorSelect: document.getElementById('groupColorSelect')
+            // Video preview
+            videoPlaceholder: document.getElementById('videoPlaceholder'),
+            videoPlayer: document.getElementById('videoPlayer'),
+            imagePreview: document.getElementById('imagePreview'),
+            currentFileName: document.getElementById('currentFileName'),
+            applyToComp: document.getElementById('applyToComp'),
+            openInAE: document.getElementById('openInAE'),
+
+            // Navigation
+            backBtn: document.getElementById('backBtn'),
+            breadcrumbPath: document.getElementById('breadcrumbPath'),
+            refreshBtn: document.getElementById('refreshBtn'),
+
+            // Content
+            folderGrid: document.getElementById('folderGrid'),
+
+            // Toast
+            toast: document.getElementById('notificationToast')
         };
 
         this.setupEventListeners();
-        this.render();
     },
 
     /**
      * Setup event listeners
      */
     setupEventListeners: function() {
-        // Scan Projects folder
-        this.elements.scanProjectsBtn.addEventListener('click', () => {
-            this.scanProjectsFolder();
+        // Refresh button
+        this.elements.refreshBtn.addEventListener('click', () => {
+            this.loadFiles();
         });
 
-        // Search
-        this.elements.searchInput.addEventListener('input', (e) => {
-            this.handleSearch(e.target.value);
+        // Back button
+        this.elements.backBtn.addEventListener('click', () => {
+            this.navigateBack();
         });
 
-        this.elements.searchBtn.addEventListener('click', () => {
-            this.handleSearch(this.elements.searchInput.value);
+        // Apply to composition
+        this.elements.applyToComp.addEventListener('click', () => {
+            if (this.selectedItem && this.selectedItem.type === 'file') {
+                this.applyToComposition(this.selectedItem);
+            }
         });
 
-        // Group filter
-        this.elements.groupFilter.addEventListener('change', (e) => {
-            this.handleGroupFilter(e.target.value);
-        });
-
-        // Add group
-        this.elements.addGroupBtn.addEventListener('click', () => {
-            this.showGroupModal();
-        });
-
-        // Close preview
-        this.elements.closePreview.addEventListener('click', () => {
-            this.hidePreview();
-        });
-
-        // Group modal
-        this.elements.closeGroupModal.addEventListener('click', () => {
-            this.hideGroupModal();
-        });
-
-        this.elements.cancelGroupBtn.addEventListener('click', () => {
-            this.hideGroupModal();
-        });
-
-        this.elements.createGroupBtn.addEventListener('click', () => {
-            this.createGroup();
-        });
-
-        // Close modal on outside click
-        this.elements.groupModal.addEventListener('click', (e) => {
-            if (e.target === this.elements.groupModal) {
-                this.hideGroupModal();
+        // Open in AE
+        this.elements.openInAE.addEventListener('click', () => {
+            if (this.selectedItem && this.selectedItem.type === 'file') {
+                this.openInAfterEffects(this.selectedItem);
             }
         });
     },
 
     /**
-     * Scan Projects folder for all files
+     * Load files from Projects folder
      */
-    scanProjectsFolder: function() {
-        if (window.AEInterface && window.AEInterface.scanProjectsFolder) {
-            this.showNotification('Scanning Projects folder...');
+    loadFiles: function() {
+        this.showNotification('Loading files from Projects folder...');
 
-            window.AEInterface.scanProjectsFolder((result) => {
-                try {
-                    const filesData = JSON.parse(result);
+        FileBrowser.loadProjectsFolder((result) => {
+            if (result.error) {
+                this.showNotification('Error: ' + result.error);
+                return;
+            }
 
-                    if (filesData.error) {
-                        this.showNotification('Error: ' + filesData.error);
-                        return;
-                    }
-
-                    if (filesData.files && filesData.files.length > 0) {
-                        const addedPresets = PresetManager.loadFromProjectsFolder(
-                            filesData.files,
-                            filesData.folders
-                        );
-
-                        const folderCount = filesData.folderCount || 0;
-                        this.showNotification(
-                            `Loaded ${addedPresets.length} file(s) from ${folderCount} folder(s)`
-                        );
-                        this.render();
-                    } else {
-                        this.showNotification('No files found in Projects folder');
-                    }
-                } catch (e) {
-                    console.error('Error parsing Projects folder data:', e);
-                    this.showNotification('Error scanning Projects folder');
-                }
-            });
-        } else {
-            this.showNotification('CEP interface not available');
-        }
-    },
-
-    /**
-     * Handle search
-     */
-    handleSearch: function(query) {
-        this.renderPresets();
-    },
-
-    /**
-     * Handle group filter
-     */
-    handleGroupFilter: function(groupId) {
-        PresetManager.activeFilter = groupId;
-        this.renderPresets();
-    },
-
-    /**
-     * Render everything
-     */
-    render: function() {
-        this.renderGroups();
-        this.renderGroupFilter();
-        this.renderPresets();
-    },
-
-    /**
-     * Render groups
-     */
-    renderGroups: function() {
-        const groups = PresetManager.currentGroups;
-        const container = this.elements.groupsList;
-
-        container.innerHTML = '';
-
-        // Add "All" group
-        const allGroup = this.createGroupElement({
-            id: 'all',
-            name: 'All',
-            color: 'blue'
-        });
-        container.appendChild(allGroup);
-
-        // Add other groups
-        groups.forEach(group => {
-            const element = this.createGroupElement(group);
-            container.appendChild(element);
+            this.currentItems = result.items || [];
+            this.showNotification(`Loaded ${result.fileCount} files from ${result.folderCount} folders`);
+            this.renderFolderGrid();
+            this.updateBreadcrumbs();
         });
     },
 
     /**
-     * Create group element
+     * Render folder grid
      */
-    createGroupElement: function(group) {
-        const div = document.createElement('div');
-        div.className = 'group-item';
-        if (PresetManager.activeFilter === group.id) {
-            div.classList.add('active');
-        }
+    renderFolderGrid: function() {
+        const grid = this.elements.folderGrid;
+        grid.innerHTML = '';
 
-        const colorSpan = document.createElement('span');
-        colorSpan.className = `group-color ${group.color}`;
-
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'group-name';
-        nameSpan.textContent = group.name;
-
-        div.appendChild(colorSpan);
-        div.appendChild(nameSpan);
-
-        div.addEventListener('click', () => {
-            PresetManager.activeFilter = group.id;
-            this.render();
-        });
-
-        return div;
-    },
-
-    /**
-     * Render group filter dropdown
-     */
-    renderGroupFilter: function() {
-        const select = this.elements.groupFilter;
-        select.innerHTML = '<option value="all">All Groups</option>';
-
-        PresetManager.currentGroups.forEach(group => {
-            const option = document.createElement('option');
-            option.value = group.id;
-            option.textContent = group.name;
-            select.appendChild(option);
-        });
-
-        select.value = PresetManager.activeFilter;
-    },
-
-    /**
-     * Render presets
-     */
-    renderPresets: function() {
-        const searchQuery = this.elements.searchInput.value;
-        const presets = PresetManager.filterPresets(null, searchQuery);
-        const container = this.elements.presetsList;
-
-        container.innerHTML = '';
-
-        if (presets.length === 0) {
-            container.innerHTML = `
+        if (this.currentItems.length === 0) {
+            grid.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📁</div>
-                    <div class="empty-state-text">No files found. Add files to the Projects folder and click "Load Files from Projects Folder".</div>
+                    <div class="empty-state-text">
+                        No files found. Place files in the Projects folder and click Refresh.
+                    </div>
                 </div>
             `;
-            this.elements.presetCount.textContent = '0';
             return;
         }
 
-        this.elements.presetCount.textContent = presets.length;
-
-        presets.forEach(preset => {
-            const element = this.createPresetElement(preset);
-            container.appendChild(element);
+        this.currentItems.forEach(item => {
+            const element = item.type === 'folder'
+                ? this.createFolderElement(item)
+                : this.createFileElement(item);
+            grid.appendChild(element);
         });
     },
 
     /**
-     * Create preset element
+     * Create folder element
      */
-    createPresetElement: function(preset) {
+    createFolderElement: function(folderItem) {
         const div = document.createElement('div');
-        div.className = 'preset-item';
+        div.className = 'folder-item';
+        div.title = `Open ${folderItem.name}`;
 
-        const header = document.createElement('div');
-        header.className = 'preset-header';
+        const icon = document.createElement('div');
+        icon.className = 'item-icon';
+        icon.textContent = '📁';
 
         const name = document.createElement('div');
-        name.className = 'preset-name';
-        name.textContent = preset.name;
+        name.className = 'item-name';
+        name.textContent = folderItem.name;
 
-        const size = document.createElement('div');
-        size.className = 'preset-size';
-        size.textContent = PresetManager.formatFileSize(preset.fileSize);
+        const info = document.createElement('div');
+        info.className = 'item-info';
+        info.textContent = `${folderItem.files?.length || 0} items`;
 
-        header.appendChild(name);
-        header.appendChild(size);
-
-        const tags = document.createElement('div');
-        tags.className = 'preset-tags';
-
-        if (preset.tags && preset.tags.length > 0) {
-            preset.tags.forEach(tag => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'tag';
-                tagSpan.textContent = tag;
-                tags.appendChild(tagSpan);
-            });
-        }
-
-        div.appendChild(header);
-        div.appendChild(tags);
+        div.appendChild(icon);
+        div.appendChild(name);
+        div.appendChild(info);
 
         div.addEventListener('click', () => {
-            this.showPreview(preset);
+            this.openFolder(folderItem);
+        });
+
+        div.addEventListener('dblclick', () => {
+            this.openFolder(folderItem);
         });
 
         return div;
     },
 
     /**
-     * Show preset preview
+     * Create file element
      */
-    showPreview: function(preset) {
-        this.currentPreview = preset;
-        this.elements.previewSection.classList.remove('hidden');
+    createFileElement: function(fileItem) {
+        const div = document.createElement('div');
+        div.className = 'file-item';
+        div.title = fileItem.fileName;
 
-        // Show preview image for GIF files
-        const previewImageContainer = document.getElementById('previewImage');
-        const previewImg = document.getElementById('previewImg');
+        const icon = document.createElement('div');
+        icon.className = 'item-icon';
+        icon.textContent = FileBrowser.getFileIcon(fileItem.fileType);
 
-        if (preset.fileType === 'gif' && preset.filePath) {
-            previewImageContainer.classList.remove('hidden');
-            // For CEP, we need to use file:// protocol or convert to base64
-            previewImg.src = 'file:///' + preset.filePath.replace(/\\/g, '/');
-        } else {
-            previewImageContainer.classList.add('hidden');
-            previewImg.src = '';
-        }
+        const name = document.createElement('div');
+        name.className = 'item-name';
+        name.textContent = fileItem.name;
 
-        document.getElementById('previewFileName').textContent = preset.fileName;
-        document.getElementById('previewFileType').textContent = preset.fileType ? preset.fileType.toUpperCase() : 'Unknown';
-        document.getElementById('previewFileSize').textContent = PresetManager.formatFileSize(preset.fileSize);
-        document.getElementById('previewDate').textContent = PresetManager.formatDate(preset.dateAdded);
+        const info = document.createElement('div');
+        info.className = 'item-info';
+        info.textContent = FileBrowser.formatFileSize(fileItem.fileSize);
 
-        const group = PresetManager.getGroup(preset.group);
-        document.getElementById('previewGroup').textContent = group ? group.name : 'Ungrouped';
+        div.appendChild(icon);
+        div.appendChild(name);
+        div.appendChild(info);
 
-        // Show folder path if available
-        const folderRow = document.getElementById('previewFolderRow');
-        const folderSpan = document.getElementById('previewFolder');
-        if (preset.folder && preset.folder !== '') {
-            folderRow.style.display = 'flex';
-            folderSpan.textContent = preset.folder;
-        } else {
-            folderRow.style.display = 'none';
-        }
-
-        // Load project details for .pack/.aep files
-        const projectContents = document.getElementById('projectContents');
-        if ((preset.fileType === 'pack' || preset.fileType === 'aep') && preset.filePath) {
-            this.loadProjectDetails(preset.filePath);
-        } else {
-            projectContents.classList.add('hidden');
-        }
-
-        this.renderPreviewTags(preset);
-        this.setupPreviewActions(preset);
-    },
-
-    /**
-     * Load and display project details
-     */
-    loadProjectDetails: function(filePath) {
-        const projectContents = document.getElementById('projectContents');
-
-        if (!window.AEInterface || !window.AEInterface.getProjectDetails) {
-            projectContents.classList.add('hidden');
-            return;
-        }
-
-        // Show loading state
-        projectContents.classList.remove('hidden');
-        document.getElementById('projectComps').textContent = '...';
-        document.getElementById('projectFootage').textContent = '...';
-        document.getElementById('projectItems').textContent = '...';
-        document.getElementById('compositionsList').innerHTML = '<div style="padding: 8px; text-align: center; color: var(--text-secondary);">Loading...</div>';
-
-        window.AEInterface.getProjectDetails(filePath, (result) => {
-            try {
-                const projectData = JSON.parse(result);
-
-                if (projectData.error) {
-                    projectContents.classList.add('hidden');
-                    console.error('Error loading project details:', projectData.error);
-                    return;
-                }
-
-                // Update stats
-                document.getElementById('projectComps').textContent = projectData.numComps || 0;
-                document.getElementById('projectFootage').textContent = projectData.numFootage || 0;
-                document.getElementById('projectItems').textContent = projectData.numItems || 0;
-
-                // Render compositions list
-                const compsList = document.getElementById('compositionsList');
-                compsList.innerHTML = '';
-
-                if (projectData.compositions && projectData.compositions.length > 0) {
-                    projectData.compositions.forEach(comp => {
-                        const compDiv = document.createElement('div');
-                        compDiv.className = 'composition-item';
-                        compDiv.title = 'Click to view composition details';
-
-                        const compName = document.createElement('div');
-                        compName.className = 'composition-name';
-                        compName.textContent = comp.name;
-
-                        const compDetails = document.createElement('div');
-                        compDetails.className = 'composition-details';
-                        compDetails.textContent = `${comp.width}×${comp.height} • ${comp.frameRate}fps • ${comp.duration}s • ${comp.numLayers} layers`;
-
-                        compDiv.appendChild(compName);
-                        compDiv.appendChild(compDetails);
-
-                        // Add click handler
-                        compDiv.addEventListener('click', () => {
-                            this.showCompositionInfo(comp);
-                        });
-
-                        compsList.appendChild(compDiv);
-                    });
-                } else {
-                    compsList.innerHTML = '<div style="padding: 8px; text-align: center; color: var(--text-secondary);">No compositions found</div>';
-                }
-
-            } catch (e) {
-                console.error('Error parsing project details:', e);
-                projectContents.classList.add('hidden');
-            }
+        div.addEventListener('click', () => {
+            this.selectFile(fileItem, div);
         });
+
+        div.addEventListener('dblclick', () => {
+            this.openInAfterEffects(fileItem);
+        });
+
+        return div;
     },
 
     /**
-     * Render preview tags
+     * Open a folder
      */
-    renderPreviewTags: function(preset) {
-        const container = document.getElementById('previewTags');
-        container.innerHTML = '';
+    openFolder: function(folderItem) {
+        const result = FileBrowser.navigateInto(folderItem);
 
-        if (preset.tags && preset.tags.length > 0) {
-            preset.tags.forEach(tag => {
-                const tagDiv = document.createElement('div');
-                tagDiv.className = 'tag-item';
+        if (result) {
+            this.currentItems = result.items;
+            this.renderFolderGrid();
+            this.updateBreadcrumbs();
+            this.clearPreview();
+        }
+    },
 
-                const tagText = document.createElement('span');
-                tagText.textContent = tag;
+    /**
+     * Navigate back
+     */
+    navigateBack: function() {
+        const result = FileBrowser.navigateBack();
 
-                const removeBtn = document.createElement('span');
-                removeBtn.className = 'tag-remove';
-                removeBtn.textContent = '×';
-                removeBtn.addEventListener('click', () => {
-                    PresetManager.removeTag(preset.id, tag);
-                    this.showPreview(PresetManager.getPreset(preset.id));
+        if (result) {
+            if (result.reload) {
+                // Need to reload from root and navigate to path
+                this.loadFiles();
+            } else {
+                this.currentItems = result.items;
+                this.renderFolderGrid();
+            }
+            this.updateBreadcrumbs();
+            this.clearPreview();
+        }
+    },
+
+    /**
+     * Update breadcrumbs
+     */
+    updateBreadcrumbs: function() {
+        const breadcrumbs = FileBrowser.getBreadcrumbs();
+        const pathElement = this.elements.breadcrumbPath;
+
+        pathElement.innerHTML = '';
+
+        breadcrumbs.forEach((crumb, index) => {
+            const span = document.createElement('span');
+            span.className = 'breadcrumb-item';
+            span.textContent = crumb.name;
+
+            if (index === breadcrumbs.length - 1) {
+                span.classList.add('active');
+            } else {
+                span.addEventListener('click', () => {
+                    this.navigateToPath(crumb.path);
                 });
+            }
 
-                tagDiv.appendChild(tagText);
-                tagDiv.appendChild(removeBtn);
-                container.appendChild(tagDiv);
-            });
+            pathElement.appendChild(span);
+        });
+
+        // Enable/disable back button
+        this.elements.backBtn.disabled = breadcrumbs.length <= 1;
+    },
+
+    /**
+     * Navigate to specific path
+     */
+    navigateToPath: function(pathArray) {
+        FileBrowser.currentPath = pathArray;
+        this.loadFiles();
+    },
+
+    /**
+     * Select a file for preview
+     */
+    selectFile: function(fileItem, element) {
+        // Remove previous selection
+        document.querySelectorAll('.file-item.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+
+        // Add selection
+        element.classList.add('selected');
+
+        this.selectedItem = fileItem;
+        FileBrowser.selectFile(fileItem);
+
+        // Update preview
+        this.showPreview(fileItem);
+
+        // Enable action buttons
+        this.elements.applyToComp.disabled = false;
+        this.elements.openInAE.disabled = false;
+        this.elements.currentFileName.textContent = fileItem.fileName;
+    },
+
+    /**
+     * Show preview for file
+     */
+    showPreview: function(fileItem) {
+        const videoPlayer = this.elements.videoPlayer;
+        const imagePreview = this.elements.imagePreview;
+        const placeholder = this.elements.videoPlaceholder;
+
+        // Hide all preview elements
+        videoPlayer.classList.add('hidden');
+        imagePreview.classList.add('hidden');
+        placeholder.classList.add('hidden');
+
+        const ext = fileItem.fileType?.toLowerCase();
+
+        // Show appropriate preview
+        if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+            // Image preview
+            imagePreview.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
+            imagePreview.classList.remove('hidden');
+        } else if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) {
+            // Video preview
+            videoPlayer.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
+            videoPlayer.classList.remove('hidden');
+        } else {
+            // Show placeholder for non-previewable files
+            placeholder.classList.remove('hidden');
+            const iconElem = placeholder.querySelector('.placeholder-icon');
+            const textElem = placeholder.querySelector('.placeholder-text');
+
+            iconElem.textContent = FileBrowser.getFileIcon(ext);
+            textElem.textContent = fileItem.fileName;
         }
-
-        // Setup tag input
-        const tagInput = document.getElementById('tagInput');
-        const addTagBtn = document.getElementById('addTagBtn');
-
-        addTagBtn.onclick = () => {
-            const tag = tagInput.value.trim();
-            if (tag) {
-                PresetManager.addTag(preset.id, tag);
-                tagInput.value = '';
-                this.showPreview(PresetManager.getPreset(preset.id));
-            }
-        };
-
-        tagInput.onkeypress = (e) => {
-            if (e.key === 'Enter') {
-                addTagBtn.click();
-            }
-        };
     },
 
     /**
-     * Setup preview actions
+     * Clear preview
      */
-    setupPreviewActions: function(preset) {
-        const applyBtn = document.getElementById('applyToComp');
-        const openBtn = document.getElementById('openInAE');
-        const deleteBtn = document.getElementById('deletePreset');
+    clearPreview: function() {
+        this.elements.videoPlayer.classList.add('hidden');
+        this.elements.imagePreview.classList.add('hidden');
+        this.elements.videoPlaceholder.classList.remove('hidden');
 
-        applyBtn.onclick = () => {
-            this.applyToComposition(preset);
-        };
+        this.elements.videoPlayer.src = '';
+        this.elements.imagePreview.src = '';
+        this.elements.currentFileName.textContent = 'No file selected';
 
-        openBtn.onclick = () => {
-            this.openInAfterEffects(preset);
-        };
+        this.elements.applyToComp.disabled = true;
+        this.elements.openInAE.disabled = true;
 
-        deleteBtn.onclick = () => {
-            if (confirm(`Delete preset "${preset.name}"?`)) {
-                PresetManager.deletePreset(preset.id);
-                this.hidePreview();
-                this.render();
-                this.showNotification('Preset deleted');
-            }
-        };
+        this.selectedItem = null;
     },
 
     /**
-     * Hide preview
+     * Apply to composition
      */
-    hidePreview: function() {
-        this.elements.previewSection.classList.add('hidden');
-        this.currentPreview = null;
-    },
-
-    /**
-     * Show group modal
-     */
-    showGroupModal: function() {
-        this.elements.groupModal.classList.remove('hidden');
-        this.elements.groupNameInput.value = '';
-        this.elements.groupNameInput.focus();
-    },
-
-    /**
-     * Hide group modal
-     */
-    hideGroupModal: function() {
-        this.elements.groupModal.classList.add('hidden');
-    },
-
-    /**
-     * Create group
-     */
-    createGroup: function() {
-        const name = this.elements.groupNameInput.value.trim();
-        const color = this.elements.groupColorSelect.value;
-
-        if (!name) {
-            alert('Please enter a group name');
-            return;
-        }
-
-        PresetManager.createGroup(name, color);
-        this.hideGroupModal();
-        this.render();
-        this.showNotification(`Group "${name}" created`);
-    },
-
-    /**
-     * Apply preset to active composition
-     */
-    applyToComposition: function(preset) {
-        if (!window.AEInterface || !window.AEInterface.csInterface) {
+    applyToComposition: function(fileItem) {
+        if (!window.AEInterface || !window.AEInterface.applyPreset) {
             this.showNotification('After Effects integration not available');
             return;
         }
 
-        if (!preset.filePath) {
-            this.showNotification('No file path available');
-            return;
-        }
-
         this.showNotification('Applying to composition...');
-        window.AEInterface.applyPreset(preset.filePath, (result) => {
+
+        window.AEInterface.applyPreset(fileItem.filePath, (result) => {
             if (result === 'true') {
-                this.showNotification('Applied successfully!');
+                this.showNotification('✓ Applied successfully!');
             } else if (result.includes('Error')) {
-                this.showNotification(result);
+                this.showNotification('✗ ' + result);
             } else {
                 this.showNotification('Applied: ' + result);
             }
@@ -561,67 +352,46 @@ const UIManager = {
     },
 
     /**
-     * Open preset in After Effects
+     * Open in After Effects
      */
-    openInAfterEffects: function(preset) {
-        if (!window.AEInterface || !window.AEInterface.csInterface) {
+    openInAfterEffects: function(fileItem) {
+        if (!window.AEInterface) {
             this.showNotification('After Effects integration not available');
             return;
         }
 
-        if (!preset.filePath) {
-            this.showNotification('No file path available');
-            return;
-        }
+        const ext = fileItem.fileType?.toLowerCase();
 
-        // Handle different file types
-        if (preset.fileType === 'jsx') {
+        if (ext === 'jsx') {
             // Execute JSX script
             this.showNotification('Executing JSX script...');
-            window.AEInterface.executeJSX(preset.filePath, (result) => {
+            window.AEInterface.executeJSX(fileItem.filePath, (result) => {
                 if (result && result !== 'undefined') {
                     if (result.includes('Error') || result.includes('error')) {
-                        this.showNotification('JSX Error: ' + result);
+                        this.showNotification('✗ JSX Error: ' + result);
                     } else {
-                        this.showNotification('JSX executed successfully');
+                        this.showNotification('✓ JSX executed successfully');
                     }
                 } else {
-                    this.showNotification('JSX executed');
+                    this.showNotification('✓ JSX executed');
                 }
             });
-        } else if (preset.fileType === 'pack') {
-            // Open PACK file as project
-            this.showNotification('Opening project...');
-            window.AEInterface.openProject(preset.filePath);
-        } else if (preset.fileType === 'gif') {
-            // GIF files can't be opened directly, maybe import?
-            this.showNotification('GIF files are for preview only');
+        } else if (ext === 'pack' || ext === 'aep') {
+            // Open project file
+            this.showNotification('Opening project in After Effects...');
+            window.AEInterface.openProject(fileItem.filePath);
         } else {
-            this.showNotification('Unknown file type: ' + preset.fileType);
+            this.showNotification('File type not supported for opening in AE');
         }
     },
 
     /**
-     * Show composition information
-     */
-    showCompositionInfo: function(comp) {
-        const details = [
-            `Composition: ${comp.name}`,
-            `Resolution: ${comp.width}×${comp.height}px`,
-            `Frame Rate: ${comp.frameRate}fps`,
-            `Duration: ${comp.duration}s`,
-            `Layers: ${comp.numLayers}`
-        ];
-        this.showNotification(details.join(' • '));
-    },
-
-    /**
-     * Show notification
+     * Show notification toast
      */
     showNotification: function(message) {
         console.log('Notification:', message);
 
-        const toast = document.getElementById('notificationToast');
+        const toast = this.elements.toast;
         if (toast) {
             toast.textContent = message;
             toast.classList.remove('hidden');

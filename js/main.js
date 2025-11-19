@@ -203,8 +203,8 @@ document.addEventListener('DOMContentLoaded', function() {
         loginScreen.classList.add('hidden');
         mainApp.classList.remove('hidden');
 
-        // Initialize storage and preset manager
-        PresetManager.init();
+        // Initialize FileBrowser
+        FileBrowser.init();
 
         // Initialize UI
         UIManager.init();
@@ -254,19 +254,22 @@ document.addEventListener('DOMContentLoaded', function() {
  * Handle keyboard shortcuts
  */
 document.addEventListener('keydown', function(e) {
-    // Ctrl/Cmd + F for search
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        document.getElementById('searchInput').focus();
+    // Escape to clear selection
+    if (e.key === 'Escape') {
+        if (UIManager.selectedItem) {
+            UIManager.clearPreview();
+            document.querySelectorAll('.file-item.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+        }
     }
 
-    // Escape to close preview
-    if (e.key === 'Escape') {
-        if (!UIManager.elements.previewSection.classList.contains('hidden')) {
-            UIManager.hidePreview();
-        }
-        if (!UIManager.elements.groupModal.classList.contains('hidden')) {
-            UIManager.hideGroupModal();
+    // Backspace to go back
+    if (e.key === 'Backspace' && !UIManager.elements.backBtn.disabled) {
+        const activeElement = document.activeElement;
+        if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            UIManager.navigateBack();
         }
     }
 });

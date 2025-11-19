@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AEP Preview</title>
-    <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <!-- Login Screen -->
     <div id="loginScreen" class="login-screen">
         <div class="login-container">
             <div class="login-header">
-                <h1>AEP Preview</h1>
-                <p>Enter password to access</p>
+                <h1>🎬 AEP Preview</h1>
+                <p>Enter password to continue</p>
             </div>
             <div class="login-form">
                 <input type="password" id="passwordInput" class="login-input" placeholder="Password" autocomplete="off">
@@ -25,186 +25,50 @@
 
     <!-- Main Application -->
     <div id="mainApp" class="container hidden">
-        <!-- Header Section -->
-        <header class="header">
-            <h1 class="title">AEP Preview</h1>
-            <p class="subtitle">Manage and preview your After Effects presets</p>
-        </header>
-
-        <!-- Upload Section -->
-        <section class="upload-section">
-            <div class="upload-container">
-                <button id="scanProjectsBtn" class="btn btn-primary btn-large">
-                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
-                    </svg>
-                    Load Files from Projects Folder
-                </button>
-            </div>
-            <div class="upload-info">
-                <p>Place your files in the <strong>Projects/</strong> folder and click the button above</p>
-            </div>
-        </section>
-
-        <!-- Search and Filter Section -->
-        <section class="search-section">
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Search presets by name or tag...">
-                <button id="searchBtn" class="btn btn-icon">
-                    <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Filter Options -->
-            <div class="filter-container">
-                <button id="filterBtn" class="btn btn-secondary">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-                    </svg>
-                    Filter
-                </button>
-                <select id="groupFilter" class="select-input">
-                    <option value="all">All Groups</option>
-                </select>
-            </div>
-        </section>
-
-        <!-- Preset Groups Section -->
-        <section class="groups-section">
-            <div class="section-header">
-                <h2>Preset Groups</h2>
-                <button id="addGroupBtn" class="btn btn-small">+ New Group</button>
-            </div>
-            <div id="groupsList" class="groups-list"></div>
-        </section>
-
-        <!-- Presets List Section -->
-        <section class="presets-section">
-            <div class="section-header">
-                <h2>Presets</h2>
-                <span id="presetCount" class="count-badge">0</span>
-            </div>
-            <div id="presetsList" class="presets-list"></div>
-        </section>
-
-        <!-- Preview Section -->
-        <section id="previewSection" class="preview-section hidden">
-            <div class="preview-header">
-                <h3 id="previewTitle">Preview</h3>
-                <button id="closePreview" class="btn btn-icon">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                </button>
-            </div>
-            <div id="previewContent" class="preview-content">
-                <!-- Preview Image/GIF -->
-                <div id="previewImage" class="preview-image-container hidden">
-                    <img id="previewImg" src="" alt="Preview">
+        <!-- Video Preview Section -->
+        <section class="preview-player">
+            <div id="videoPreview" class="video-container">
+                <div id="videoPlaceholder" class="video-placeholder">
+                    <div class="placeholder-icon">🎥</div>
+                    <div class="placeholder-text">Select a file to preview</div>
                 </div>
-
-                <!-- Project Contents (for .pack/.aep files) -->
-                <div id="projectContents" class="project-contents hidden">
-                    <h4>Project Contents</h4>
-                    <div class="project-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">Compositions:</span>
-                            <span id="projectComps" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Footage Items:</span>
-                            <span id="projectFootage" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Total Items:</span>
-                            <span id="projectItems" class="stat-value">0</span>
-                        </div>
-                    </div>
-                    <div class="compositions-list">
-                        <h5>Compositions</h5>
-                        <div id="compositionsList"></div>
-                    </div>
-                </div>
-
+                <video id="videoPlayer" class="video-player hidden" controls></video>
+                <img id="imagePreview" class="image-preview hidden" alt="Preview">
+            </div>
+            <div class="preview-controls">
+                <button id="applyToComp" class="btn btn-success" disabled>Apply to Composition</button>
+                <button id="openInAE" class="btn btn-primary" disabled>Open in After Effects</button>
                 <div class="preview-info">
-                    <div class="info-row">
-                        <span class="label">File Name:</span>
-                        <span id="previewFileName" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">File Type:</span>
-                        <span id="previewFileType" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">File Size:</span>
-                        <span id="previewFileSize" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Date Added:</span>
-                        <span id="previewDate" class="value"></span>
-                    </div>
-                    <div class="info-row">
-                        <span class="label">Group:</span>
-                        <span id="previewGroup" class="value"></span>
-                    </div>
-                    <div class="info-row" id="previewFolderRow">
-                        <span class="label">Folder:</span>
-                        <span id="previewFolder" class="value"></span>
-                    </div>
-                </div>
-
-                <!-- Tags Section -->
-                <div class="tags-section">
-                    <h4>Tags</h4>
-                    <div id="previewTags" class="tags-container"></div>
-                    <div class="tag-input-container">
-                        <input type="text" id="tagInput" class="tag-input" placeholder="Add tag...">
-                        <button id="addTagBtn" class="btn btn-small">Add</button>
-                    </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="preview-actions">
-                    <button id="applyToComp" class="btn btn-success">Apply to Active Composition</button>
-                    <button id="openInAE" class="btn btn-primary">Open in After Effects</button>
-                    <button id="deletePreset" class="btn btn-danger">Delete Preset</button>
+                    <span id="currentFileName" class="current-file-name">No file selected</span>
                 </div>
             </div>
         </section>
-    </div>
 
-    <!-- Modal for Creating New Group -->
-    <div id="groupModal" class="modal hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Create New Group</h3>
-                <button class="modal-close" id="closeGroupModal">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+        <!-- Navigation Breadcrumbs -->
+        <section class="navigation-section">
+            <div class="breadcrumbs">
+                <button id="backBtn" class="btn btn-icon" title="Go back" disabled>
+                    <span>←</span>
+                </button>
+                <div id="breadcrumbPath" class="breadcrumb-path">
+                    <span class="breadcrumb-item active">Projects</span>
+                </div>
+                <button id="refreshBtn" class="btn btn-secondary btn-small">
+                    <span>🔄</span> Refresh
                 </button>
             </div>
-            <div class="modal-body">
-                <input type="text" id="groupNameInput" class="input" placeholder="Group name...">
-                <select id="groupColorSelect" class="select-input">
-                    <option value="blue">Blue</option>
-                    <option value="green">Green</option>
-                    <option value="red">Red</option>
-                    <option value="yellow">Yellow</option>
-                    <option value="purple">Purple</option>
-                    <option value="orange">Orange</option>
-                </select>
+        </section>
+
+        <!-- Folder/File Grid -->
+        <section class="content-section">
+            <div id="folderGrid" class="folder-grid">
+                <!-- Folders and files will be rendered here -->
+                <div class="empty-state">
+                    <div class="empty-state-icon">📁</div>
+                    <div class="empty-state-text">Click "Refresh" to load files from Projects folder</div>
+                </div>
             </div>
-            <div class="modal-footer">
-                <button id="cancelGroupBtn" class="btn btn-secondary">Cancel</button>
-                <button id="createGroupBtn" class="btn btn-primary">Create Group</button>
-            </div>
-        </div>
+        </section>
     </div>
 
     <!-- Notification Toast -->
@@ -213,7 +77,7 @@
     <!-- Scripts -->
     <script src="lib/CSInterface.js"></script>
     <script src="js/storage.js"></script>
-    <script src="js/presets.js"></script>
+    <script src="js/browser.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/main.js"></script>
 </body>

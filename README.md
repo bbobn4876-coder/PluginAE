@@ -1,17 +1,35 @@
 # AEP Preview - Adobe After Effects Plugin
 
-A powerful CEP (Common Extensibility Platform) extension for Adobe After Effects that allows you to manage, organize, and preview your After Effects project files (.aep) with an intuitive interface.
+A powerful CEP (Common Extensibility Platform) extension for Adobe After Effects that allows you to manage, organize, and preview your project files with an intuitive interface.
 
 ## Features
 
-- **File Upload**: Upload and manage multiple .aep files
-- **Preview**: View detailed information about your project files
+### Security
+- **Password Protection**: Secure access with password authentication (default: 1234)
+- **Session Management**: Stays authenticated during your After Effects session
+
+### File Management
+- **Multiple File Types**: Support for `.pack` project files, `.jsx` scripts, and `.gif` previews
+- **File Upload**: Upload and manage multiple `.pack` files via button or drag & drop
+- **Projects Folder**: Automatic scanning of `.jsx` and `.gif` files from Projects directory
+- **Smart Preview**: Visual preview for GIF files, detailed info for all types
+
+### Organization
 - **Preset Grouping**: Organize presets into custom groups with color coding
 - **Tagging System**: Add multiple tags to presets for better organization
 - **Search Functionality**: Quickly find presets by name or tag
-- **Drag & Drop**: Drag .aep files directly into the panel
+- **Filter by Group**: Dropdown filter to view specific groups
+
+### Integration
+- **JSX Script Execution**: Run ExtendScript files directly in After Effects
+- **Project Loading**: Open `.pack` files as After Effects projects
+- **Smart File Handling**: Different actions based on file type
+
+### User Experience
 - **Dark Theme**: Seamlessly integrates with After Effects' dark interface
 - **Local Storage**: All data persists between sessions
+- **Keyboard Shortcuts**: Quick access with Ctrl/Cmd+F and Escape
+- **Drag & Drop**: Drag files directly into the panel
 
 ## Project Structure
 
@@ -35,10 +53,15 @@ PluginAE/
 ├── lib/                # External libraries
 │   └── CSInterface.js  # Adobe CEP library
 ├── META-INF/           # Metadata
+├── Projects/           # ⭐ Place your .jsx and .gif files here
+│   ├── example.jsx     # Example JSX script
+│   └── README.md
 ├── res/                # Resources
 ├── .debug              # Debug configuration
 ├── index.html          # Main HTML file
 ├── mimetype            # MIME type definition
+├── INSTALL.md          # Installation guide
+├── USAGE.md            # ⭐ Detailed usage instructions
 └── README.md           # This file
 ```
 
@@ -90,11 +113,23 @@ PluginAE/
 
 ## Usage
 
-### Uploading Presets
+### First Time Login
 
-1. Click the **Upload AEP Files** button
-2. Select one or more .aep files from your computer
-3. Or drag and drop .aep files directly into the panel
+**Password:** `1234`
+
+Enter the password when the plugin opens. You'll stay logged in for your After Effects session.
+
+### Uploading Files
+
+#### Upload .pack Files:
+1. Click the **"Upload Pack Files"** button
+2. Select one or more `.pack` files from your computer
+3. Or drag and drop `.pack` files directly into the panel
+
+#### Load from Projects Folder:
+1. Place `.jsx` and `.gif` files in the `Projects/` folder
+2. Click **"Scan Projects Folder"** button
+3. All compatible files will be loaded automatically
 
 ### Creating Groups
 
@@ -118,13 +153,33 @@ PluginAE/
 
 ### Opening in After Effects
 
-1. Select a preset to view its details
-2. Click **Open in After Effects** to load the project file
+The **"Open in After Effects"** button works differently based on file type:
+
+- **`.pack` files**: Opens as an After Effects project
+- **`.jsx` files**: Executes the ExtendScript in After Effects
+- **`.gif` files**: Preview only (shows notification)
+
+Steps:
+1. Click on any preset to open the preview panel
+2. Click **"Open in After Effects"**
+3. The action will be performed based on file type
+
+### Preview Panel
+
+- **GIF files**: Shows animated preview image
+- **All files**: Display file name, type, size, date, group
+- **Tags**: Add or remove tags
+- **Actions**: Open/Execute in AE or delete
 
 ### Keyboard Shortcuts
 
 - `Ctrl/Cmd + F`: Focus search input
 - `Escape`: Close preview panel or modal
+- `Enter`: Submit login or add tag
+
+---
+
+For detailed usage instructions, see [USAGE.md](USAGE.md)
 
 ## Development
 

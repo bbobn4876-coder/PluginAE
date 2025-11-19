@@ -107,8 +107,15 @@ const UIManager = {
                     }
 
                     if (filesData.files && filesData.files.length > 0) {
-                        const addedPresets = PresetManager.loadFromProjectsFolder(filesData.files);
-                        this.showNotification(`Loaded ${addedPresets.length} file(s) from Projects folder`);
+                        const addedPresets = PresetManager.loadFromProjectsFolder(
+                            filesData.files,
+                            filesData.folders
+                        );
+
+                        const folderCount = filesData.folderCount || 0;
+                        this.showNotification(
+                            `Loaded ${addedPresets.length} file(s) from ${folderCount} folder(s)`
+                        );
                         this.render();
                     } else {
                         this.showNotification('No files found in Projects folder');
@@ -230,7 +237,7 @@ const UIManager = {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📁</div>
-                    <div class="empty-state-text">No presets found. Upload some AEP files to get started.</div>
+                    <div class="empty-state-text">No files found. Add files to the Projects folder and click "Load Files from Projects Folder".</div>
                 </div>
             `;
             this.elements.presetCount.textContent = '0';
@@ -315,6 +322,16 @@ const UIManager = {
 
         const group = PresetManager.getGroup(preset.group);
         document.getElementById('previewGroup').textContent = group ? group.name : 'Ungrouped';
+
+        // Show folder path if available
+        const folderRow = document.getElementById('previewFolderRow');
+        const folderSpan = document.getElementById('previewFolder');
+        if (preset.folder && preset.folder !== '') {
+            folderRow.style.display = 'flex';
+            folderSpan.textContent = preset.folder;
+        } else {
+            folderRow.style.display = 'none';
+        }
 
         // Load project details for .pack/.aep files
         const projectContents = document.getElementById('projectContents');

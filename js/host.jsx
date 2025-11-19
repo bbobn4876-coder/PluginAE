@@ -283,7 +283,7 @@ function executeJSXFile(filePath) {
 }
 
 /**
- * Scan Projects folder for ALL files
+ * Scan Projects folder for ALL files (recursive)
  * @return {string} JSON string with files array
  */
 function scanProjectsFolder() {
@@ -299,36 +299,61 @@ function scanProjectsFolder() {
         }
 
         var files = [];
-        var allFiles = projectsFolder.getFiles();
+        var folders = [];
 
-        for (var i = 0; i < allFiles.length; i++) {
-            var file = allFiles[i];
+        // Recursive function to scan folders
+        function scanFolder(folder, relativePath) {
+            var contents = folder.getFiles();
 
-            // Check if it's a file (not a folder)
-            if (file instanceof File) {
-                // Skip hidden files and README
-                if (file.name.indexOf('.') === 0 || file.name.toLowerCase() === 'readme.md') {
-                    continue;
+            for (var i = 0; i < contents.length; i++) {
+                var item = contents[i];
+
+                if (item instanceof Folder) {
+                    // It's a folder - scan it recursively
+                    var folderName = item.name;
+                    var newRelativePath = relativePath ? relativePath + "/" + folderName : folderName;
+
+                    // Add folder to folders array
+                    folders.push({
+                        name: folderName,
+                        path: newRelativePath
+                    });
+
+                    // Scan this folder recursively
+                    scanFolder(item, newRelativePath);
+
+                } else if (item instanceof File) {
+                    // It's a file
+                    // Skip hidden files and README
+                    if (item.name.indexOf('.') === 0 || item.name.toLowerCase() === 'readme.md') {
+                        continue;
+                    }
+
+                    var fileType = '';
+                    var nameParts = item.name.split('.');
+                    if (nameParts.length > 1) {
+                        fileType = nameParts[nameParts.length - 1].toLowerCase();
+                    }
+
+                    files.push({
+                        name: item.name,
+                        path: item.fsName,
+                        type: fileType,
+                        size: item.length,
+                        folder: relativePath || '' // Which subfolder this file is in
+                    });
                 }
-
-                var fileType = '';
-                var nameParts = file.name.split('.');
-                if (nameParts.length > 1) {
-                    fileType = nameParts[nameParts.length - 1].toLowerCase();
-                }
-
-                files.push({
-                    name: file.name,
-                    path: file.fsName,
-                    type: fileType,
-                    size: file.length
-                });
             }
         }
 
+        // Start scanning from Projects folder
+        scanFolder(projectsFolder, '');
+
         return JSON.stringify({
             files: files,
-            count: files.length
+            folders: folders,
+            count: files.length,
+            folderCount: folders.length
         });
 
     } catch (e) {

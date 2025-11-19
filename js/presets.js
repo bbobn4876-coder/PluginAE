@@ -34,12 +34,39 @@ const PresetManager = {
     },
 
     /**
-     * Load presets from Projects folder
+     * Load presets from Projects folder with automatic grouping
      */
-    loadFromProjectsFolder: function(filesData) {
+    loadFromProjectsFolder: function(filesData, foldersData) {
         if (!filesData || !Array.isArray(filesData)) {
             console.warn('Invalid files data from Projects folder');
             return [];
+        }
+
+        // Create groups from folders
+        if (foldersData && Array.isArray(foldersData)) {
+            foldersData.forEach(folderInfo => {
+                // Check if group already exists
+                const existing = this.currentGroups.find(g =>
+                    g.name === folderInfo.name && g.source === 'folder'
+                );
+
+                if (!existing) {
+                    // Auto-assign color based on folder name
+                    const color = this.getFolderColor(folderInfo.name);
+
+                    const group = {
+                        name: folderInfo.name,
+                        color: color,
+                        source: 'folder',
+                        folderPath: folderInfo.path
+                    };
+
+                    StorageManager.addGroup(group);
+                }
+            });
+
+            // Reload groups
+            this.loadGroups();
         }
 
         const addedPresets = [];
@@ -55,13 +82,25 @@ const PresetManager = {
                 return;
             }
 
+            // Determine group based on folder
+            let groupId = 'ungrouped';
+            if (fileInfo.folder) {
+                // Find group by folder name
+                const folderName = fileInfo.folder.split('/')[0]; // Get first level folder
+                const group = this.currentGroups.find(g => g.name === folderName);
+                if (group) {
+                    groupId = group.id;
+                }
+            }
+
             const preset = {
                 name: fileInfo.name,
                 fileName: fileInfo.name,
                 filePath: fileInfo.path,
                 fileSize: fileInfo.size || 0,
                 fileType: fileInfo.type,
-                group: 'ungrouped',
+                group: groupId,
+                folder: fileInfo.folder || '',
                 tags: [],
                 dateAdded: new Date().toISOString(),
                 source: 'projects'
@@ -73,6 +112,28 @@ const PresetManager = {
 
         this.loadPresets();
         return addedPresets;
+    },
+
+    /**
+     * Get color for folder based on name
+     */
+    getFolderColor: function(folderName) {
+        const lowerName = folderName.toLowerCase();
+
+        // Auto-assign colors based on keywords
+        if (lowerName.includes('background') || lowerName.includes('bg')) return 'blue';
+        if (lowerName.includes('icon')) return 'purple';
+        if (lowerName.includes('preset')) return 'green';
+        if (lowerName.includes('transition') || lowerName.includes('tran')) return 'orange';
+        if (lowerName.includes('title')) return 'red';
+        if (lowerName.includes('shape')) return 'yellow';
+        if (lowerName.includes('gradient')) return 'purple';
+        if (lowerName.includes('template')) return 'blue';
+
+        // Default colors rotation
+        const colors = ['blue', 'green', 'red', 'yellow', 'purple', 'orange'];
+        const hash = folderName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return colors[hash % colors.length];
     },
 
     /**

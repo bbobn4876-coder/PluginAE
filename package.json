@@ -1,0 +1,30 @@
+{
+  "name": "aep-preview",
+  "version": "1.0.0",
+  "description": "Adobe After Effects CEP extension for managing and previewing .aep files",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "adobe",
+    "after-effects",
+    "cep",
+    "extension",
+    "plugin",
+    "aep",
+    "preview",
+    "preset"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "bugs": {
+    "url": ""
+  },
+  "homepage": ""
+}

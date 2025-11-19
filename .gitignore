@@ -1,0 +1,31 @@
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Node modules (if using npm for development)
+node_modules/
+package-lock.json
+
+# Build files
+*.zxp
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# User data (for testing)
+*.test.aep
+test-data/

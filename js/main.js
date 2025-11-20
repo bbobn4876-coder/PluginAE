@@ -99,7 +99,9 @@ window.AEInterface = {
             return;
         }
 
-        const script = `openAEProject("${filePath}")`;
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `openAEProject("${escapedPath}")`;
         this.evalScript(script, (result) => {
             if (result === 'true') {
                 console.log('Project opened successfully');
@@ -134,7 +136,9 @@ window.AEInterface = {
             return;
         }
 
-        const script = `executeJSXFile("${filePath}")`;
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `executeJSXFile("${escapedPath}")`;
         this.evalScript(script, callback);
     },
 
@@ -165,7 +169,9 @@ window.AEInterface = {
             return;
         }
 
-        const script = `getProjectDetails("${filePath}")`;
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `getProjectDetails("${escapedPath}")`;
         this.evalScript(script, callback);
     },
 
@@ -178,7 +184,24 @@ window.AEInterface = {
             return;
         }
 
-        const script = `applyPreset("${filePath}")`;
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `applyPreset("${escapedPath}")`;
+        this.evalScript(script, callback);
+    },
+
+    /**
+     * Import file into After Effects
+     */
+    importFile: function(filePath, callback) {
+        if (!filePath) {
+            console.error('No file path provided');
+            return;
+        }
+
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `importFile("${escapedPath}")`;
         this.evalScript(script, callback);
     }
 };

@@ -478,7 +478,7 @@ function getProjectDetails(filePath) {
 
 /**
  * Apply preset/effect to active composition
- * @param {string} filePath - Path to the preset file (.jsx, .pack, .aep)
+ * @param {string} filePath - Path to the preset file (.jsx, .pack, .aep, .ffx, .prst)
  * @return {string} "true" on success, error message on failure
  */
 function applyPreset(filePath) {
@@ -512,6 +512,23 @@ function applyPreset(filePath) {
                 return "true";
             } else {
                 return "Error: Cannot import this file type";
+            }
+
+        } else if (fileType === 'ffx' || fileType === 'prst') {
+            // Apply animation preset to selected layer
+            // First check if there's a selected layer
+            if (activeComp.selectedLayers.length === 0) {
+                return "Error: No layer selected. Please select a layer to apply the preset.";
+            }
+
+            var selectedLayer = activeComp.selectedLayers[0];
+
+            // Apply the animation preset
+            try {
+                selectedLayer.applyPreset(presetFile);
+                return "true";
+            } catch (presetError) {
+                return "Error: Failed to apply preset - " + presetError.toString();
             }
 
         } else {

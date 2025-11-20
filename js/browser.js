@@ -194,16 +194,47 @@ const FileBrowser = {
      */
     getFileIcon: function(fileType) {
         const icons = {
+            // Project files
             'pack': '📦',
             'aep': '📦',
+
+            // Scripts
             'jsx': '📜',
+
+            // Images
             'gif': '🖼️',
             'png': '🖼️',
             'jpg': '🖼️',
             'jpeg': '🖼️',
+            'bmp': '🖼️',
+            'tif': '🖼️',
+            'tiff': '🖼️',
+            'psd': '🖼️',
+            'ai': '🖼️',
+            'svg': '🖼️',
+
+            // Video
             'mp4': '🎥',
             'mov': '🎥',
-            'avi': '🎥'
+            'avi': '🎥',
+            'webm': '🎥',
+            'mkv': '🎥',
+            'flv': '🎥',
+            'wmv': '🎥',
+            'mpg': '🎥',
+            'mpeg': '🎥',
+
+            // Audio
+            'mp3': '🎵',
+            'wav': '🎵',
+            'aac': '🎵',
+            'flac': '🎵',
+            'ogg': '🎵',
+            'wma': '🎵',
+
+            // Presets
+            'prst': '⚡',
+            'ffx': '⚡'
         };
 
         return icons[fileType?.toLowerCase()] || '📄';

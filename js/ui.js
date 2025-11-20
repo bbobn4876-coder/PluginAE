@@ -404,8 +404,47 @@ const UIManager = {
             // Open project file
             this.showNotification('Opening project in After Effects...');
             window.AEInterface.openProject(fileItem.filePath);
+        } else if (ext === 'prst' || ext === 'ffx') {
+            // Animation preset - use Apply to Comp instead
+            this.showNotification('Use "Apply to Comp" button to apply presets to a selected layer');
+        } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tif', 'tiff', 'psd', 'ai', 'svg'].includes(ext)) {
+            // Import image file as footage
+            this.showNotification('Importing image into After Effects...');
+            window.AEInterface.importFile(fileItem.filePath, (result) => {
+                if (result === 'true') {
+                    this.showNotification('✓ Image imported successfully!');
+                } else if (result.includes('Error')) {
+                    this.showNotification('✗ ' + result);
+                } else {
+                    this.showNotification('✓ Imported: ' + result);
+                }
+            });
+        } else if (['mp4', 'mov', 'avi', 'webm', 'mkv', 'flv', 'wmv', 'mpg', 'mpeg'].includes(ext)) {
+            // Import video file as footage
+            this.showNotification('Importing video into After Effects...');
+            window.AEInterface.importFile(fileItem.filePath, (result) => {
+                if (result === 'true') {
+                    this.showNotification('✓ Video imported successfully!');
+                } else if (result.includes('Error')) {
+                    this.showNotification('✗ ' + result);
+                } else {
+                    this.showNotification('✓ Imported: ' + result);
+                }
+            });
+        } else if (['mp3', 'wav', 'aac', 'flac', 'ogg', 'wma'].includes(ext)) {
+            // Import audio file as footage
+            this.showNotification('Importing audio into After Effects...');
+            window.AEInterface.importFile(fileItem.filePath, (result) => {
+                if (result === 'true') {
+                    this.showNotification('✓ Audio imported successfully!');
+                } else if (result.includes('Error')) {
+                    this.showNotification('✗ ' + result);
+                } else {
+                    this.showNotification('✓ Imported: ' + result);
+                }
+            });
         } else {
-            this.showNotification('File type not supported for opening in AE');
+            this.showNotification('File type not supported: .' + ext);
         }
     },
 

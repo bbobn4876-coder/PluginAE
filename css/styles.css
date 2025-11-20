@@ -57,15 +57,39 @@ body {
     color: var(--text-primary);
 }
 
-/* Gradient Title */
+/* Gradient Title with Animation */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 .gradient-title {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+    background: linear-gradient(
+        90deg,
+        #667eea 0%,
+        #764ba2 14%,
+        #f093fb 28%,
+        #4facfe 42%,
+        #00f2fe 56%,
+        #667eea 70%,
+        #764ba2 84%,
+        #f093fb 100%
+    );
+    background-size: 300% 100%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     font-size: 28px;
     font-weight: 700;
     letter-spacing: 0.5px;
+    animation: gradientShift 4s ease infinite;
 }
 
 .login-header p {
@@ -276,6 +300,11 @@ body {
     border-radius: 4px;
     font-weight: 500;
     color: #333;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
 }
 
 .folder-item .item-info {

@@ -235,6 +235,8 @@ const FileBrowser = {
 
     /**
      * Open .aep file as a folder (navigate into it)
+     * Uses cached data when available to avoid reopening the project in After Effects
+     * Compositions can be dragged to timeline or double-clicked to import
      */
     openAepFile: function(fileItem, callback) {
         if (!fileItem.filePath || !['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
@@ -242,7 +244,7 @@ const FileBrowser = {
             return;
         }
 
-        // Get contents of .aep file
+        // Get contents of .aep file (uses cache when available)
         window.AEInterface.getAepContents(fileItem.filePath, (result) => {
             try {
                 const contents = JSON.parse(result);
@@ -261,6 +263,7 @@ const FileBrowser = {
                 };
 
                 // Convert only compositions to file items (no footage)
+                // Compositions are shown as draggable items that can be imported to timeline
                 const items = [];
 
                 // Add only compositions

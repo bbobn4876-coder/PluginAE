@@ -790,6 +790,7 @@ function renderCompPreview(comp, outputPath) {
 
 /**
  * Get contents of an .aep file (list of compositions and footage items)
+ * Uses caching to avoid reopening projects
  * @param {string} filePath - Full path to the .aep file
  * @return {string} JSON string with contents
  */
@@ -809,6 +810,30 @@ function getAepContents(filePath) {
             });
         }
 
+        // Check for cache file
+        var cacheFilePath = filePath + '.cache.json';
+        var cacheFile = new File(cacheFilePath);
+        var projectModified = projectFile.modified.getTime();
+
+        // Try to read from cache if it exists and is fresh
+        if (cacheFile.exists) {
+            try {
+                cacheFile.open('r');
+                var cacheContent = cacheFile.read();
+                cacheFile.close();
+
+                var cacheData = JSON.parse(cacheContent);
+
+                // Check if cache is still valid (file hasn't been modified)
+                if (cacheData.timestamp && cacheData.timestamp >= projectModified) {
+                    return JSON.stringify(cacheData.contents);
+                }
+            } catch (cacheError) {
+                // Cache read failed, continue to regenerate
+            }
+        }
+
+        // Cache miss or invalid - need to open project
         // Save current project state
         var currentProject = app.project.file;
         var currentProjectPath = currentProject ? currentProject.fsName : null;
@@ -853,6 +878,20 @@ function getAepContents(filePath) {
             // Reopen previous project if there was one
             if (currentProjectPath !== null) {
                 app.open(new File(currentProjectPath));
+            }
+
+            // Write to cache
+            try {
+                var cacheData = {
+                    timestamp: projectModified,
+                    contents: contents
+                };
+
+                cacheFile.open('w');
+                cacheFile.write(JSON.stringify(cacheData));
+                cacheFile.close();
+            } catch (cacheWriteError) {
+                // Cache write failed, but we still have the data
             }
 
             return JSON.stringify(contents);

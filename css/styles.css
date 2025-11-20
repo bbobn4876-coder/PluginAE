@@ -801,3 +801,65 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
 }
+
+/* Drag and Drop Styles */
+.file-item[draggable="true"] {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.file-item[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.file-item.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+}
+
+/* Drag indicator badge */
+.file-item[data-draggable="true"]::before {
+    content: '⇄';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.file-item[data-draggable="true"]:hover::before {
+    opacity: 1;
+}
+
+/* Composition item specific styling */
+.file-item[data-draggable="true"] .item-icon {
+    position: relative;
+}
+
+.file-item[data-draggable="true"] .item-icon::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.file-item[data-draggable="true"]:hover .item-icon::after {
+    opacity: 1;
+}

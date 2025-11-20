@@ -116,6 +116,43 @@ const UIManager = {
                 this.toggleSearch();
             }
         });
+
+        // Setup global drag-and-drop handler
+        this.setupDragAndDrop();
+    },
+
+    /**
+     * Setup drag-and-drop handler for compositions
+     */
+    setupDragAndDrop: function() {
+        // Prevent default drag behavior on document
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            try {
+                const data = e.dataTransfer.getData('application/json');
+                if (!data) return;
+
+                const dragData = JSON.parse(data);
+
+                if (dragData.type === 'aep-composition') {
+                    // Import composition to timeline
+                    this.importCompositionToTimeline({
+                        aepPath: dragData.aepPath,
+                        compositionName: dragData.compositionName,
+                        fileName: dragData.fileName
+                    });
+                }
+            } catch (err) {
+                console.error('Drag-and-drop error:', err);
+            }
+        });
     },
 
     /**
@@ -469,6 +506,36 @@ const UIManager = {
         const div = document.createElement('div');
         div.className = 'file-item';
         div.title = fileItem.fileName;
+
+        // Make compositions draggable
+        if (fileItem.type === 'aep-composition') {
+            div.draggable = true;
+            div.setAttribute('data-draggable', 'true');
+
+            // Store composition data in element
+            div.compositionData = {
+                aepPath: fileItem.aepPath,
+                compositionName: fileItem.compositionName,
+                fileName: fileItem.fileName
+            };
+
+            // Add drag event listeners
+            div.addEventListener('dragstart', (e) => {
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'aep-composition',
+                    aepPath: fileItem.aepPath,
+                    compositionName: fileItem.compositionName,
+                    fileName: fileItem.fileName
+                }));
+                div.classList.add('dragging');
+                this.showNotification('🎬 Drag to After Effects timeline to add composition');
+            });
+
+            div.addEventListener('dragend', (e) => {
+                div.classList.remove('dragging');
+            });
+        }
 
         // Check if item has preview thumbnail
         const hasPreview = fileItem.previewPath || fileItem.videoPreviewPath;

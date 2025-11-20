@@ -41,14 +41,18 @@ A powerful CEP (Common Extensibility Platform) extension for Adobe After Effects
 PluginAE/
 ├── .idea/              # IDE configuration
 ├── css/                # Stylesheets
-│   ├── styles.css
-│   └── theme.css
+│   ├── fonts.css       # Custom font definitions
+│   ├── styles.css      # Main styles
+│   └── theme.css       # Theme variables
 ├── CSXS/               # CEP manifest
 │   └── manifest.xml
+├── Font/               # Custom fonts directory
+│   └── README.md       # Font usage guide
 ├── img/                # Icons and images
 │   ├── icon-dark.png
 │   └── icon-light.png
 ├── js/                 # JavaScript files
+│   ├── browser.js      # File browser logic
 │   ├── host.jsx        # ExtendScript for AE
 │   ├── main.js         # Main application
 │   ├── presets.js      # Preset management
@@ -63,7 +67,7 @@ PluginAE/
 ├── res/                # Resources
 ├── .debug              # Debug configuration
 ├── index.html          # Main HTML file
-├── mimetype            # MIME type definition
+├── mimetype            # MIME type definition (Adobe AIR)
 ├── INSTALL.md          # Installation guide
 ├── USAGE.md            # ⭐ Detailed usage instructions
 └── README.md           # This file
@@ -261,6 +265,34 @@ Edit `css/theme.css` to modify the color scheme:
    - Preset logic → `js/presets.js`
    - UI updates → `js/ui.js`
    - After Effects integration → `js/host.jsx`
+
+#### Adding Custom Fonts
+
+The plugin supports custom fonts through the `Font/` directory:
+
+1. **Add font files** to the `Font/` directory:
+   - Supported formats: `.ttf`, `.otf`, `.woff`, `.woff2`
+
+2. **Define fonts** in `css/fonts.css`:
+   ```css
+   @font-face {
+       font-family: 'YourFont';
+       src: url('../Font/YourFont.woff2') format('woff2'),
+            url('../Font/YourFont.ttf') format('truetype');
+       font-weight: 400;
+       font-style: normal;
+       font-display: swap;
+   }
+   ```
+
+3. **Use fonts** in your CSS:
+   ```css
+   body {
+       font-family: 'YourFont', 'Segoe UI', sans-serif;
+   }
+   ```
+
+See `Font/README.md` for detailed instructions.
 
 ## Compatibility
 

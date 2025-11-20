@@ -204,6 +204,21 @@ window.AEInterface = {
         const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         const script = `importFile("${escapedPath}")`;
         this.evalScript(script, callback);
+    },
+
+    /**
+     * Import file into After Effects and add to timeline
+     */
+    importFileToTimeline: function(filePath, callback) {
+        if (!filePath) {
+            console.error('No file path provided');
+            return;
+        }
+
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `importFileToTimeline("${escapedPath}")`;
+        this.evalScript(script, callback);
     }
 };
 

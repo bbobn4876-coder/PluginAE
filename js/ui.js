@@ -452,15 +452,15 @@ const UIManager = {
                 }
             });
         } else if (['mp3', 'wav', 'aac', 'flac', 'ogg', 'wma'].includes(ext)) {
-            // Import audio file as footage
-            this.showNotification('Importing audio into After Effects...');
-            window.AEInterface.importFile(fileItem.filePath, (result) => {
+            // Import audio file to timeline
+            this.showNotification('Adding audio to timeline...');
+            window.AEInterface.importFileToTimeline(fileItem.filePath, (result) => {
                 if (result === 'true') {
-                    this.showNotification('✓ Audio imported successfully!');
+                    this.showNotification('✓ Audio added to timeline successfully!');
                 } else if (result.includes('Error')) {
                     this.showNotification('✗ ' + result);
                 } else {
-                    this.showNotification('✓ Imported: ' + result);
+                    this.showNotification('✓ Added: ' + result);
                 }
             });
         } else {

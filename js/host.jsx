@@ -46,42 +46,75 @@ function openAEProject(filePath) {
             // Import as project - this adds the project items to the current project
             app.project.importFile(importOptions);
 
-            // Find ALL newly imported compositions (they won't be in our existing IDs list)
-            var addedCount = 0;
-            var newCompositions = [];
+            // Find or create "FluxMotion" folder
+            var fluxMotionFolder = null;
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+                if (item instanceof FolderItem && item.name === "FluxMotion") {
+                    fluxMotionFolder = item;
+                    break;
+                }
+            }
 
-            // Scan through ALL items in the project (not just new range)
+            // Create FluxMotion folder if it doesn't exist
+            if (!fluxMotionFolder) {
+                fluxMotionFolder = app.project.items.addFolder("FluxMotion");
+            }
+
+            // Get .aep file name without extension
+            var fileName = projectFile.name.replace(/\.(aep|pack)$/i, '');
+
+            // Create subfolder for this .aep file
+            var aepFolder = app.project.items.addFolder(fileName);
+            aepFolder.parentFolder = fluxMotionFolder;
+
+            // Find ALL newly imported items (not in our existing IDs list)
+            var newCompositions = [];
+            var newItems = [];
+
             for (var i = 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
 
                 // Check if this item is new (wasn't in our list before)
                 if (item && !existingItemIds[item.id]) {
-                    // Only process compositions
+                    // Skip the folders we just created
+                    if (item === fluxMotionFolder || item === aepFolder) {
+                        continue;
+                    }
+
+                    newItems.push(item);
+
+                    // Only collect compositions
                     if (item instanceof CompItem) {
                         newCompositions.push(item);
                     }
                 }
             }
 
-            // Add all found compositions to the timeline
-            for (var j = 0; j < newCompositions.length; j++) {
-                var comp = newCompositions[j];
+            // Move all new items to the .aep folder
+            for (var j = 0; j < newItems.length; j++) {
+                newItems[j].parentFolder = aepFolder;
+            }
+
+            // Add ONLY the first composition to the timeline with in/out points
+            if (newCompositions.length > 0) {
+                var firstComp = newCompositions[0];
+
                 try {
                     // Add to timeline at the top
-                    var newLayer = activeComp.layers.add(comp);
+                    var newLayer = activeComp.layers.add(firstComp);
 
                     // Position at current time
                     newLayer.startTime = activeComp.time;
 
-                    addedCount++;
-                } catch (addError) {
-                    // Continue even if one item fails
-                    continue;
-                }
-            }
+                    // Set in and out points to match composition duration
+                    newLayer.inPoint = activeComp.time;
+                    newLayer.outPoint = activeComp.time + firstComp.duration;
 
-            if (addedCount > 0) {
-                return "true";
+                    return "true";
+                } catch (addError) {
+                    return "Error: Failed to add composition to timeline - " + addError.toString();
+                }
             } else {
                 return "Error: Project imported but no compositions were found. The file may contain only footage items.";
             }
@@ -197,6 +230,53 @@ function importFile(filePath) {
 
         if (importOptions.canImportAs(ImportAsType.FOOTAGE)) {
             var footage = app.project.importFile(importOptions);
+            return "true";
+        } else {
+            return "Error: Cannot import this file type";
+        }
+
+    } catch (e) {
+        return "Error: " + e.toString();
+    }
+}
+
+/**
+ * Import a file into the project and add to timeline
+ * @param {string} filePath - Path to file to import
+ * @return {string} "true" on success, error message on failure
+ */
+function importFileToTimeline(filePath) {
+    try {
+        var importFile = new File(filePath);
+
+        if (!importFile.exists) {
+            return "Error: File not found - " + filePath;
+        }
+
+        // Check if there's an active composition
+        var activeComp = app.project.activeItem;
+        if (!(activeComp instanceof CompItem)) {
+            return "Error: No active composition. Please create or open a composition first.";
+        }
+
+        var importOptions = new ImportOptions(importFile);
+
+        if (importOptions.canImportAs(ImportAsType.FOOTAGE)) {
+            // Import the file
+            var footage = app.project.importFile(importOptions);
+
+            // Add to timeline at the top
+            var newLayer = activeComp.layers.add(footage);
+
+            // Position at current time
+            newLayer.startTime = activeComp.time;
+
+            // Set in and out points
+            if (footage.duration && footage.duration > 0) {
+                newLayer.inPoint = activeComp.time;
+                newLayer.outPoint = activeComp.time + footage.duration;
+            }
+
             return "true";
         } else {
             return "Error: Cannot import this file type";

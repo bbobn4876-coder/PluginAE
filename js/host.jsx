@@ -6,7 +6,7 @@
 #target aftereffects
 
 /**
- * Import an After Effects project file into current project
+ * Import an After Effects project file into current project and add to timeline
  * @param {string} filePath - Full path to the project file (.aep or .pack)
  * @return {string} "true" on success, error message on failure
  */
@@ -24,13 +24,49 @@ function openAEProject(filePath) {
             return "Error: Not a valid project file (must be .aep or .pack)";
         }
 
-        // Import the project file into current project instead of opening as new project
+        // Check if there's an active composition
+        var activeComp = app.project.activeItem;
+        if (!(activeComp instanceof CompItem)) {
+            return "Error: No active composition. Please create or open a composition first.";
+        }
+
+        // Remember the number of items before import
+        var itemCountBefore = app.project.numItems;
+
+        // Import the project file into current project
         var importOptions = new ImportOptions(projectFile);
 
         if (importOptions.canImportAs(ImportAsType.PROJECT)) {
             // Import as project - this adds the project items to the current project
             app.project.importFile(importOptions);
-            return "true";
+
+            // Find newly imported compositions and add them to timeline
+            var addedCount = 0;
+            for (var i = itemCountBefore + 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+
+                // Add any composition or footage to the active composition's timeline
+                if (item instanceof CompItem || item instanceof FootageItem) {
+                    try {
+                        // Add to timeline at the top
+                        var newLayer = activeComp.layers.add(item);
+
+                        // Position at current time
+                        newLayer.startTime = activeComp.time;
+
+                        addedCount++;
+                    } catch (addError) {
+                        // Continue even if one item fails
+                        continue;
+                    }
+                }
+            }
+
+            if (addedCount > 0) {
+                return "true";
+            } else {
+                return "Error: Project imported but no items were added to timeline";
+            }
         } else {
             return "Error: Cannot import this project file";
         }
@@ -246,7 +282,7 @@ function getSystemInfo() {
 }
 
 /**
- * Execute a JSX script file
+ * Execute a JSX script file and add created items to timeline
  * @param {string} filePath - Full path to the .jsx file
  * @return {string} Result of script execution
  */
@@ -258,12 +294,51 @@ function executeJSXFile(filePath) {
             return "Error: JSX file not found - " + filePath;
         }
 
+        // Check if there's an active composition
+        var activeComp = app.project.activeItem;
+        if (!(activeComp instanceof CompItem)) {
+            return "Error: No active composition. Please create or open a composition first.";
+        }
+
+        // Remember the number of items and layers before execution
+        var itemCountBefore = app.project.numItems;
+        var layerCountBefore = activeComp.numLayers;
+
         // Use $.evalFile() which is the proper way to execute JSX scripts
         var result = $.evalFile(jsxFile);
+
+        // Find newly created items and add them to timeline
+        var addedCount = 0;
+        for (var i = itemCountBefore + 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+
+            // Add any composition or footage to the active composition's timeline
+            if (item instanceof CompItem || item instanceof FootageItem) {
+                try {
+                    // Add to timeline at the top
+                    var newLayer = activeComp.layers.add(item);
+
+                    // Position at current time
+                    newLayer.startTime = activeComp.time;
+
+                    addedCount++;
+                } catch (addError) {
+                    // Continue even if one item fails
+                    continue;
+                }
+            }
+        }
+
+        // Check if any layers were added directly by the script
+        if (activeComp.numLayers > layerCountBefore) {
+            addedCount += (activeComp.numLayers - layerCountBefore);
+        }
 
         // Return the result or success message
         if (result !== undefined && result !== null) {
             return result.toString();
+        } else if (addedCount > 0) {
+            return "true";
         } else {
             return "true";
         }

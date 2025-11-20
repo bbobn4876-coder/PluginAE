@@ -203,6 +203,12 @@ document.addEventListener('DOMContentLoaded', function() {
         loginScreen.classList.add('hidden');
         mainApp.classList.remove('hidden');
 
+        // Initialize PresetManager
+        if (typeof PresetManager !== 'undefined') {
+            PresetManager.init();
+            console.log('PresetManager initialized');
+        }
+
         // Initialize FileBrowser
         FileBrowser.init();
 

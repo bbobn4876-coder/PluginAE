@@ -384,6 +384,8 @@ const UIManager = {
             }
 
             this.currentItems = result.items || [];
+            // Store all items for global search
+            FileBrowser.allItems = result.items || [];
             this.showNotification(`Loaded ${result.fileCount} files from ${result.folderCount} folders`);
             this.renderFolderGrid();
             this.updateBreadcrumbs();
@@ -420,37 +422,18 @@ const UIManager = {
     /**
      * Create folder element
      */
-    createFolderElement: function(folderItem) {
+    createFolderElement: function(folderItem, isSearchResult = false) {
         const div = document.createElement('div');
         div.className = 'folder-item';
         div.title = `Open ${folderItem.name}`;
 
-        // Find first image or video file in folder for preview
-        const previewFile = folderItem.files?.find(f => {
-            const ext = f.fileType?.toLowerCase();
-            return ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'webm'].includes(ext);
-        });
-
-        // If there's a preview file, add it
-        if (previewFile) {
-            const ext = previewFile.fileType?.toLowerCase();
-            if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
-                const preview = document.createElement('img');
-                preview.className = 'folder-preview';
-                preview.src = 'file:///' + previewFile.filePath.replace(/\\/g, '/');
-                preview.alt = folderItem.name;
-                div.appendChild(preview);
-            } else if (['mp4', 'mov', 'webm'].includes(ext)) {
-                const preview = document.createElement('video');
-                preview.className = 'folder-preview';
-                preview.src = 'file:///' + previewFile.filePath.replace(/\\/g, '/');
-                preview.muted = true;
-                preview.loop = true;
-                preview.autoplay = false;
-                preview.addEventListener('mouseenter', () => preview.play());
-                preview.addEventListener('mouseleave', () => preview.pause());
-                div.appendChild(preview);
-            }
+        // Check if there's a .png preview for this folder
+        if (folderItem.folderPreviewPath) {
+            const preview = document.createElement('img');
+            preview.className = 'folder-preview';
+            preview.src = 'file:///' + folderItem.folderPreviewPath.replace(/\\/g, '/');
+            preview.alt = folderItem.name;
+            div.appendChild(preview);
         }
 
         const name = document.createElement('div');
@@ -480,7 +463,7 @@ const UIManager = {
     /**
      * Create file element
      */
-    createFileElement: function(fileItem) {
+    createFileElement: function(fileItem, isSearchResult = false) {
         const div = document.createElement('div');
         div.className = 'file-item';
         div.title = fileItem.fileName;
@@ -626,14 +609,23 @@ const UIManager = {
 
         const ext = fileItem.fileType?.toLowerCase();
 
-        // Check for .mp4 preview for .aep files
+        // Check for video/gif preview for .aep files
         if (['aep', 'pack'].includes(ext) && fileItem.videoPreviewPath) {
-            // Show video preview for .aep file
-            videoPlayer.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
-            videoPlayerContainer.classList.remove('hidden');
-            videoPlayer.play().catch(err => {
-                console.log('Auto-play prevented:', err);
-            });
+            // Determine if it's a .gif or video file
+            const previewExt = fileItem.videoPreviewPath.split('.').pop().toLowerCase();
+
+            if (previewExt === 'gif') {
+                // Show .gif as image preview
+                imagePreview.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
+                imagePreview.classList.remove('hidden');
+            } else {
+                // Show video preview (.mp4, etc.)
+                videoPlayer.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
+                videoPlayerContainer.classList.remove('hidden');
+                videoPlayer.play().catch(err => {
+                    console.log('Auto-play prevented:', err);
+                });
+            }
             return;
         }
 
@@ -877,53 +869,53 @@ const UIManager = {
     },
 
     /**
-     * Filter files by search query
+     * Filter files by search query (global search across all folders)
      */
     filterFiles: function(query) {
         const grid = this.elements.folderGrid;
-        const items = grid.querySelectorAll('.folder-item, .file-item');
 
         if (!query || query.trim() === '') {
-            // Show all items
-            items.forEach(item => {
-                item.style.display = '';
-            });
+            // Show current folder items
+            this.renderFolderGrid();
             return;
         }
 
-        const searchQuery = query.toLowerCase().trim();
-        let visibleCount = 0;
+        // Perform global search
+        const searchResults = FileBrowser.searchGlobal(query);
 
-        items.forEach(item => {
-            const name = item.querySelector('.item-name');
-            if (name) {
-                const itemName = name.textContent.toLowerCase();
-                if (itemName.includes(searchQuery)) {
-                    item.style.display = '';
-                    visibleCount++;
-                } else {
-                    item.style.display = 'none';
-                }
-            }
-        });
+        // Clear grid
+        grid.innerHTML = '';
 
-        // Show message if no results
-        if (visibleCount === 0 && items.length > 0) {
-            const existingMessage = grid.querySelector('.search-no-results');
-            if (!existingMessage) {
-                const message = document.createElement('div');
-                message.className = 'empty-state search-no-results';
-                message.innerHTML = `
-                    <div class="empty-state-icon">🔍</div>
-                    <div class="empty-state-text">No files found matching "${query}"</div>
-                `;
-                grid.appendChild(message);
-            }
-        } else {
-            const existingMessage = grid.querySelector('.search-no-results');
-            if (existingMessage) {
-                existingMessage.remove();
-            }
+        if (searchResults.length === 0) {
+            // Show "no results" message
+            const message = document.createElement('div');
+            message.className = 'empty-state search-no-results';
+            message.innerHTML = `
+                <div class="empty-state-icon">🔍</div>
+                <div class="empty-state-text">No files found matching "${query}"</div>
+            `;
+            grid.appendChild(message);
+            return;
         }
+
+        // Render search results
+        searchResults.forEach(item => {
+            const element = item.type === 'folder'
+                ? this.createFolderElement(item, true)
+                : this.createFileElement(item, true);
+
+            // Add search path info
+            if (item.searchPath) {
+                const pathInfo = document.createElement('div');
+                pathInfo.className = 'search-path-info';
+                pathInfo.textContent = item.searchPath;
+                pathInfo.style.fontSize = '11px';
+                pathInfo.style.color = '#888';
+                pathInfo.style.marginTop = '4px';
+                element.appendChild(pathInfo);
+            }
+
+            grid.appendChild(element);
+        });
     }
 };

@@ -6,6 +6,7 @@
 const FileBrowser = {
     currentPath: [],  // Stack of folder names
     currentItems: [], // Current folder contents
+    allItems: [],     // All items from root for global search
     selectedFile: null,
 
     /**
@@ -89,15 +90,33 @@ const FileBrowser = {
         const items = [];
         const folderMap = new Map();
 
-        // First pass: collect all .mp4 files by name (without extension)
-        const mp4Files = new Map();
+        // First pass: collect all .mp4 and .gif files by name (without extension) for .aep previews
+        const videoPreviewFiles = new Map();
+        // Collect all .png files by name (without extension) for folder previews
+        const pngFiles = new Map();
+
         if (files && Array.isArray(files)) {
             files.forEach(file => {
-                if (file.type && file.type.toLowerCase() === 'mp4') {
-                    const baseName = file.name.replace(/\.mp4$/i, '');
+                const fileType = file.type ? file.type.toLowerCase() : '';
+
+                // Collect video preview files (.mp4 and .gif)
+                if (fileType === 'mp4' || fileType === 'gif') {
+                    const baseName = file.name.replace(/\.(mp4|gif)$/i, '');
                     const folderPath = file.folder || '';
                     const key = folderPath + '/' + baseName;
-                    mp4Files.set(key, file.path);
+
+                    // Prefer .gif over .mp4 if both exist
+                    if (fileType === 'gif' || !videoPreviewFiles.has(key)) {
+                        videoPreviewFiles.set(key, file.path);
+                    }
+                }
+
+                // Collect .png files for folder previews
+                if (fileType === 'png') {
+                    const baseName = file.name.replace(/\.png$/i, '');
+                    const folderPath = file.folder || '';
+                    const key = folderPath + '/' + baseName;
+                    pngFiles.set(key, file.path);
                 }
             });
         }
@@ -110,36 +129,50 @@ const FileBrowser = {
 
                 // Only show top-level folders
                 if (depth === 1) {
+                    // Check if there's a .png file with the same name as this folder
+                    // PNG files in root with folder name should match
+                    const folderPreviewKey = '/' + folder.name;
+                    let folderPreviewPath = pngFiles.get(folderPreviewKey) || null;
+
+                    // Also check for PNG files inside the folder with the same name
+                    if (!folderPreviewPath) {
+                        const folderInternalKey = folder.name + '/' + folder.name;
+                        folderPreviewPath = pngFiles.get(folderInternalKey) || null;
+                    }
+
                     folderMap.set(folder.name, {
                         type: 'folder',
                         name: this.decodeFileName(folder.name),
                         path: folder.path,
                         fullPath: folder.fullPath || folder.path,
                         files: [],
-                        info: folder.info || null
+                        info: folder.info || null,
+                        folderPreviewPath: folderPreviewPath
                     });
                 }
             });
         }
 
-        // Process files (skip .mp4 files)
+        // Process files (skip .mp4, .gif, and .png files)
         if (files && Array.isArray(files)) {
             files.forEach(file => {
-                // Skip .mp4 files - they will be used as previews only
-                if (file.type && file.type.toLowerCase() === 'mp4') {
+                const fileType = file.type ? file.type.toLowerCase() : '';
+
+                // Skip .mp4, .gif, and .png files - they will be used as previews only
+                if (fileType === 'mp4' || fileType === 'gif' || fileType === 'png') {
                     return;
                 }
 
                 const folderPath = file.folder || '';
                 const topLevelFolder = folderPath.split('/')[0];
 
-                // Check if there's a matching .mp4 file for .aep files
+                // Check if there's a matching video preview file (.gif or .mp4) for .aep files
                 let videoPreviewPath = null;
-                if (file.type && file.type.toLowerCase() === 'aep') {
+                if (fileType === 'aep') {
                     const baseName = file.name.replace(/\.aep$/i, '');
                     const key = folderPath + '/' + baseName;
-                    if (mp4Files.has(key)) {
-                        videoPreviewPath = mp4Files.get(key);
+                    if (videoPreviewFiles.has(key)) {
+                        videoPreviewPath = videoPreviewFiles.get(key);
                     }
                 }
 
@@ -311,5 +344,45 @@ const FileBrowser = {
 
         this.selectedFile = fileItem;
         return this.selectedFile;
+    },
+
+    /**
+     * Search globally across all folders and files
+     * @param {string} query - Search query
+     * @return {Array} - Array of matching items
+     */
+    searchGlobal: function(query) {
+        if (!query || query.trim() === '') {
+            return [];
+        }
+
+        const searchQuery = query.toLowerCase().trim();
+        const results = [];
+
+        // Helper function to recursively search through items
+        const searchItems = (items, parentPath = '') => {
+            items.forEach(item => {
+                const itemName = item.name.toLowerCase();
+
+                // Check if item name matches search query
+                if (itemName.includes(searchQuery)) {
+                    // Clone the item and add parent path info
+                    const resultItem = { ...item };
+                    resultItem.searchPath = parentPath ? parentPath + '/' + item.name : item.name;
+                    results.push(resultItem);
+                }
+
+                // If it's a folder, search its contents recursively
+                if (item.type === 'folder' && item.files && item.files.length > 0) {
+                    const newParentPath = parentPath ? parentPath + '/' + item.name : item.name;
+                    searchItems(item.files, newParentPath);
+                }
+            });
+        };
+
+        // Start search from all items
+        searchItems(this.allItems);
+
+        return results;
     }
 };

@@ -854,7 +854,13 @@ function getAepContents(filePath) {
                 });
             }
 
+            // Suppress After Effects dialogs (e.g., missing footage warnings)
+            app.beginSuppressDialogs();
+
             app.project.importFile(importOptions);
+
+            // End dialog suppression (false = don't show any dialogs that were suppressed)
+            app.endSuppressDialogs(false);
 
             var contents = {
                 compositions: [],
@@ -888,6 +894,8 @@ function getAepContents(filePath) {
             }
 
             // Clean up: remove all imported items (we only needed the metadata)
+            // Suppress dialogs during cleanup
+            app.beginSuppressDialogs();
             for (var j = 0; j < importedItems.length; j++) {
                 try {
                     importedItems[j].remove();
@@ -895,6 +903,7 @@ function getAepContents(filePath) {
                     // Continue even if removal fails
                 }
             }
+            app.endSuppressDialogs(false);
 
             // Write to cache
             try {

@@ -444,8 +444,8 @@ const UIManager = {
             // Render folder tree in sidebar
             this.renderFolderTree(result.items || []);
 
-            // Render content grid
-            this.renderFolderGrid();
+            // Don't render content grid initially - show placeholder message instead
+            // Files will be shown when a folder is clicked in the tree
             this.updateBreadcrumbs();
             // Show static preview for Projects folder
             this.showProjectsPreview();

@@ -454,7 +454,7 @@ function scanProjectsFolder() {
     try {
         // Get extension path
         var extensionPath = new File($.fileName).parent.parent.fsName;
-        var projectsFolder = new Folder(extensionPath + "/PluginAE-claude-ae-plugin-aep-preview-015QZVTK55uxUEVxkVxRXuPD");
+        var projectsFolder = new Folder(extensionPath + "/Projects");
 
         if (!projectsFolder.exists) {
             return JSON.stringify({

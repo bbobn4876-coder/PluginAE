@@ -276,6 +276,8 @@ body {
     border: 1px solid #d0d0d0;
     position: relative;
     min-height: 120px;
+    justify-content: flex-end;
+    gap: 2px;
 }
 
 .folder-preview {
@@ -294,7 +296,6 @@ body {
 .folder-item .item-name {
     position: relative;
     z-index: 2;
-    margin-top: auto;
     background: rgba(255, 255, 255, 0.95);
     padding: 4px 8px;
     border-radius: 4px;

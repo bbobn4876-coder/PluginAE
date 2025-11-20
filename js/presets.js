@@ -34,11 +34,11 @@ const PresetManager = {
     },
 
     /**
-     * Load presets from Projects folder with automatic grouping
+     * Load presets from FluxMotion folder with automatic grouping
      */
     loadFromProjectsFolder: function(filesData, foldersData) {
         if (!filesData || !Array.isArray(filesData)) {
-            console.warn('Invalid files data from Projects folder');
+            console.warn('Invalid files data from FluxMotion folder');
             return [];
         }
 

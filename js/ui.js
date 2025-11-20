@@ -20,8 +20,6 @@ const UIManager = {
             imagePreview: document.getElementById('imagePreview'),
             youtubePreview: document.getElementById('youtubePreview'),
             currentFileName: document.getElementById('currentFileName'),
-            applyToComp: document.getElementById('applyToComp'),
-            openInAE: document.getElementById('openInAE'),
 
             // Navigation
             backBtn: document.getElementById('backBtn'),
@@ -51,27 +49,13 @@ const UIManager = {
         this.elements.backBtn.addEventListener('click', () => {
             this.navigateBack();
         });
-
-        // Apply to composition
-        this.elements.applyToComp.addEventListener('click', () => {
-            if (this.selectedItem && this.selectedItem.type === 'file') {
-                this.applyToComposition(this.selectedItem);
-            }
-        });
-
-        // Open in AE
-        this.elements.openInAE.addEventListener('click', () => {
-            if (this.selectedItem && this.selectedItem.type === 'file') {
-                this.openInAfterEffects(this.selectedItem);
-            }
-        });
     },
 
     /**
-     * Load files from Projects folder
+     * Load files from FluxMotion folder
      */
     loadFiles: function() {
-        this.showNotification('Loading files from Projects folder...');
+        this.showNotification('Loading files from FluxMotion folder...');
 
         FileBrowser.loadProjectsFolder((result) => {
             if (result.error) {
@@ -98,7 +82,7 @@ const UIManager = {
                 <div class="empty-state">
                     <div class="empty-state-icon">📁</div>
                     <div class="empty-state-text">
-                        No files found. Place files in the Projects folder and click Refresh.
+                        No files found. Place files in the FluxMotion folder and click Refresh.
                     </div>
                 </div>
             `;
@@ -140,7 +124,8 @@ const UIManager = {
 
         const name = document.createElement('div');
         name.className = 'item-name';
-        name.textContent = folderItem.name;
+        // Decode URL encoding (e.g., %20 for spaces)
+        name.textContent = decodeURIComponent(folderItem.name);
 
         const info = document.createElement('div');
         info.className = 'item-info';
@@ -174,7 +159,8 @@ const UIManager = {
 
         const name = document.createElement('div');
         name.className = 'item-name';
-        name.textContent = fileItem.name;
+        // Decode URL encoding (e.g., %20 for spaces)
+        name.textContent = decodeURIComponent(fileItem.name);
 
         const info = document.createElement('div');
         info.className = 'item-info';
@@ -283,9 +269,7 @@ const UIManager = {
         // Update preview
         this.showPreview(fileItem);
 
-        // Enable action buttons
-        this.elements.applyToComp.disabled = false;
-        this.elements.openInAE.disabled = false;
+        // Update file name display
         this.elements.currentFileName.textContent = fileItem.fileName;
     },
 
@@ -358,9 +342,6 @@ const UIManager = {
         this.elements.imagePreview.src = '';
         this.elements.youtubePreview.src = '';
         this.elements.currentFileName.textContent = 'No file selected';
-
-        this.elements.applyToComp.disabled = true;
-        this.elements.openInAE.disabled = true;
 
         this.selectedItem = null;
     },

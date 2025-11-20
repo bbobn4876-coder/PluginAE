@@ -154,7 +154,7 @@ window.AEInterface = {
     },
 
     /**
-     * Scan Projects folder for files
+     * Scan FluxMotion folder for files
      */
     scanProjectsFolder: function(callback) {
         const script = 'scanProjectsFolder()';

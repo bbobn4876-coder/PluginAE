@@ -447,18 +447,18 @@ function executeJSXFile(filePath) {
 }
 
 /**
- * Scan Projects folder for ALL files (recursive)
+ * Scan FluxMotion folder for ALL files (recursive)
  * @return {string} JSON string with files array
  */
 function scanProjectsFolder() {
     try {
         // Get extension path
         var extensionPath = new File($.fileName).parent.parent.fsName;
-        var projectsFolder = new Folder(extensionPath + "/Projects");
+        var projectsFolder = new Folder(extensionPath + "/FluxMotion");
 
         if (!projectsFolder.exists) {
             return JSON.stringify({
-                error: "Projects folder not found at: " + projectsFolder.fsName
+                error: "FluxMotion folder not found at: " + projectsFolder.fsName
             });
         }
 
@@ -533,7 +533,7 @@ function scanProjectsFolder() {
             }
         }
 
-        // Start scanning from Projects folder
+        // Start scanning from FluxMotion folder
         scanFolder(projectsFolder, '');
 
         return JSON.stringify({

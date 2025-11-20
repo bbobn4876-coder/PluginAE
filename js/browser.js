@@ -18,7 +18,7 @@ const FileBrowser = {
     },
 
     /**
-     * Load files from Projects folder
+     * Load files from FluxMotion folder
      */
     loadProjectsFolder: function(callback) {
         if (!window.AEInterface || !window.AEInterface.scanProjectsFolder) {
@@ -32,7 +32,7 @@ const FileBrowser = {
                 const data = JSON.parse(result);
 
                 if (data.error) {
-                    console.error('Error loading Projects folder:', data.error);
+                    console.error('Error loading FluxMotion folder:', data.error);
                     if (callback) callback(data);
                     return;
                 }
@@ -100,7 +100,7 @@ const FileBrowser = {
                         info: file.info || null
                     });
                 } else if (!folderPath) {
-                    // File is in root of Projects folder
+                    // File is in root of FluxMotion folder
                     items.push({
                         type: 'file',
                         name: file.name,
@@ -163,7 +163,7 @@ const FileBrowser = {
     },
 
     /**
-     * Navigate to root (Projects folder)
+     * Navigate to root (FluxMotion folder)
      */
     navigateToRoot: function() {
         this.currentPath = [];
@@ -177,7 +177,7 @@ const FileBrowser = {
      * Get current breadcrumb path
      */
     getBreadcrumbs: function() {
-        const crumbs = [{ name: 'Projects', path: [] }];
+        const crumbs = [{ name: 'FluxMotion', path: [] }];
 
         this.currentPath.forEach((folder, index) => {
             crumbs.push({

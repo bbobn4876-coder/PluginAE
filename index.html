@@ -34,7 +34,9 @@
                     <div class="placeholder-text">Select a file to preview</div>
                 </div>
                 <iframe id="youtubePreview" class="youtube-preview hidden" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                <video id="videoPlayer" class="video-player hidden" controls></video>
+                <div id="videoPlayerContainer" class="video-player-container hidden">
+                    <video id="videoPlayer" class="video-player" autoplay loop muted></video>
+                </div>
                 <img id="imagePreview" class="image-preview hidden" alt="Preview">
                 <div id="audioPlayerContainer" class="audio-player-container hidden">
                     <div class="audio-player-wrapper">

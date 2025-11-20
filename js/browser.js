@@ -55,6 +55,34 @@ const FileBrowser = {
     },
 
     /**
+     * Decode file name from URL encoding
+     */
+    decodeFileName: function(name) {
+        if (!name) return name;
+        try {
+            return decodeURIComponent(name);
+        } catch (e) {
+            return name
+                .replace(/%20/g, ' ')
+                .replace(/%21/g, '!')
+                .replace(/%23/g, '#')
+                .replace(/%24/g, '$')
+                .replace(/%26/g, '&')
+                .replace(/%27/g, "'")
+                .replace(/%28/g, '(')
+                .replace(/%29/g, ')')
+                .replace(/%2B/g, '+')
+                .replace(/%2C/g, ',')
+                .replace(/%2D/g, '-')
+                .replace(/%2E/g, '.')
+                .replace(/%3D/g, '=')
+                .replace(/%40/g, '@')
+                .replace(/%5B/g, '[')
+                .replace(/%5D/g, ']');
+        }
+    },
+
+    /**
      * Organize files into folder structure
      */
     organizeFolderStructure: function(files, folders) {
@@ -71,7 +99,7 @@ const FileBrowser = {
                 if (depth === 1) {
                     folderMap.set(folder.name, {
                         type: 'folder',
-                        name: folder.name,
+                        name: this.decodeFileName(folder.name),
                         path: folder.path,
                         fullPath: folder.fullPath || folder.path,
                         files: [],
@@ -91,8 +119,8 @@ const FileBrowser = {
                     // File belongs to a folder
                     folderMap.get(topLevelFolder).files.push({
                         type: 'file',
-                        name: file.name,
-                        fileName: file.name,
+                        name: this.decodeFileName(file.name),
+                        fileName: this.decodeFileName(file.name),
                         filePath: file.path,
                         fileSize: file.size || 0,
                         fileType: file.type,
@@ -103,8 +131,8 @@ const FileBrowser = {
                     // File is in root of FluxMotion folder
                     items.push({
                         type: 'file',
-                        name: file.name,
-                        fileName: file.name,
+                        name: this.decodeFileName(file.name),
+                        fileName: this.decodeFileName(file.name),
                         filePath: file.path,
                         fileSize: file.size || 0,
                         fileType: file.type,

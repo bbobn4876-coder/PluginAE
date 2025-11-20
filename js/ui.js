@@ -50,6 +50,7 @@ const UIManager = {
         this.elements = {
             // Video preview
             videoPlaceholder: document.getElementById('videoPlaceholder'),
+            videoPlayerContainer: document.getElementById('videoPlayerContainer'),
             videoPlayer: document.getElementById('videoPlayer'),
             imagePreview: document.getElementById('imagePreview'),
             youtubePreview: document.getElementById('youtubePreview'),
@@ -589,6 +590,7 @@ const UIManager = {
      * Show preview for file
      */
     showPreview: function(fileItem) {
+        const videoPlayerContainer = this.elements.videoPlayerContainer;
         const videoPlayer = this.elements.videoPlayer;
         const imagePreview = this.elements.imagePreview;
         const youtubePreview = this.elements.youtubePreview;
@@ -597,7 +599,7 @@ const UIManager = {
         const placeholder = this.elements.videoPlaceholder;
 
         // Hide all preview elements
-        videoPlayer.classList.add('hidden');
+        videoPlayerContainer.classList.add('hidden');
         imagePreview.classList.add('hidden');
         youtubePreview.classList.add('hidden');
         audioPlayerContainer.classList.add('hidden');
@@ -605,7 +607,7 @@ const UIManager = {
 
         const ext = fileItem.fileType?.toLowerCase();
 
-        // Check for YouTube preview in info.json first
+        // Check for YouTube preview in info.json for any file type
         if (fileItem.info && fileItem.info.videoPreview) {
             // Extract src from iframe HTML if needed
             let videoSrc = fileItem.info.videoPreview;
@@ -624,15 +626,29 @@ const UIManager = {
             return;
         }
 
+        // For AEP and PACK files without videoPreview, check for thumbnail or show placeholder
+        if (['aep', 'pack'].includes(ext)) {
+            // If there's no video preview, show placeholder
+            placeholder.classList.remove('hidden');
+            const iconElem = placeholder.querySelector('.placeholder-icon');
+            const textElem = placeholder.querySelector('.placeholder-text');
+            iconElem.textContent = FileBrowser.getFileIcon(ext);
+            textElem.textContent = this.decodeFileName(fileItem.fileName);
+            return;
+        }
+
         // Show appropriate preview based on file type
         if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
             // Image preview
             imagePreview.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
             imagePreview.classList.remove('hidden');
         } else if (['mp4', 'mov', 'avi', 'webm'].includes(ext)) {
-            // Video preview
+            // Video preview with autoplay
             videoPlayer.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
-            videoPlayer.classList.remove('hidden');
+            videoPlayerContainer.classList.remove('hidden');
+            videoPlayer.play().catch(err => {
+                console.log('Auto-play prevented:', err);
+            });
         } else if (['mp3', 'wav'].includes(ext)) {
             // Audio preview
             audioPlayer.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
@@ -659,12 +675,13 @@ const UIManager = {
      * Clear preview
      */
     clearPreview: function() {
-        this.elements.videoPlayer.classList.add('hidden');
+        this.elements.videoPlayerContainer.classList.add('hidden');
         this.elements.imagePreview.classList.add('hidden');
         this.elements.youtubePreview.classList.add('hidden');
         this.elements.audioPlayerContainer.classList.add('hidden');
         this.elements.videoPlaceholder.classList.remove('hidden');
 
+        this.elements.videoPlayer.pause();
         this.elements.videoPlayer.src = '';
         this.elements.imagePreview.src = '';
         this.elements.youtubePreview.src = '';

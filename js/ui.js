@@ -898,8 +898,6 @@ const UIManager = {
      * Open .aep file as a folder
      */
     openAepAsFolder: function(fileItem) {
-        this.showNotification('Opening ' + fileItem.fileName + '...');
-
         FileBrowser.openAepFile(fileItem, (result) => {
             if (result.error) {
                 this.showNotification('✗ Error: ' + result.error);
@@ -910,9 +908,6 @@ const UIManager = {
             this.renderFolderGrid();
             this.updateBreadcrumbs();
             this.clearPreview();
-
-            const count = result.items.length;
-            this.showNotification(`✓ Opened ${fileItem.fileName} (${count} ${count === 1 ? 'item' : 'items'})`);
         });
     },
 

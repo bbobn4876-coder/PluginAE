@@ -91,9 +91,9 @@ window.AEInterface = {
     },
 
     /**
-     * Open a project in After Effects
+     * Import a project into the current After Effects project
      */
-    openProject: function(filePath) {
+    openProject: function(filePath, callback) {
         if (!filePath) {
             console.error('No file path provided');
             return;
@@ -104,10 +104,11 @@ window.AEInterface = {
         const script = `openAEProject("${escapedPath}")`;
         this.evalScript(script, (result) => {
             if (result === 'true') {
-                console.log('Project opened successfully');
+                console.log('Project imported successfully');
             } else {
-                console.error('Failed to open project:', result);
+                console.error('Failed to import project:', result);
             }
+            if (callback) callback(result);
         });
     },
 

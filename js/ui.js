@@ -401,9 +401,17 @@ const UIManager = {
                 }
             });
         } else if (ext === 'pack' || ext === 'aep') {
-            // Open project file
-            this.showNotification('Opening project in After Effects...');
-            window.AEInterface.openProject(fileItem.filePath);
+            // Import project file into current project
+            this.showNotification('Importing project into current After Effects project...');
+            window.AEInterface.openProject(fileItem.filePath, (result) => {
+                if (result === 'true') {
+                    this.showNotification('✓ Project imported successfully!');
+                } else if (result.includes('Error')) {
+                    this.showNotification('✗ ' + result);
+                } else {
+                    this.showNotification('✓ Imported: ' + result);
+                }
+            });
         } else if (ext === 'prst' || ext === 'ffx') {
             // Animation preset - use Apply to Comp instead
             this.showNotification('Use "Apply to Comp" button to apply presets to a selected layer');

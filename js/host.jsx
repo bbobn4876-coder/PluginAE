@@ -6,7 +6,7 @@
 #target aftereffects
 
 /**
- * Open an After Effects project file
+ * Import an After Effects project file into current project
  * @param {string} filePath - Full path to the project file (.aep or .pack)
  * @return {string} "true" on success, error message on failure
  */
@@ -24,24 +24,15 @@ function openAEProject(filePath) {
             return "Error: Not a valid project file (must be .aep or .pack)";
         }
 
-        // Close current project if needed (with confirmation)
-        if (app.project.file !== null) {
-            // Check if current project has unsaved changes
-            if (app.project.dirty) {
-                var response = confirm("Current project has unsaved changes. Continue opening new project?");
-                if (!response) {
-                    return "Error: User cancelled operation";
-                }
-            }
-        }
+        // Import the project file into current project instead of opening as new project
+        var importOptions = new ImportOptions(projectFile);
 
-        // Open the project
-        var openedProject = app.open(projectFile);
-
-        if (openedProject) {
+        if (importOptions.canImportAs(ImportAsType.PROJECT)) {
+            // Import as project - this adds the project items to the current project
+            app.project.importFile(importOptions);
             return "true";
         } else {
-            return "Error: Failed to open project";
+            return "Error: Cannot import this project file";
         }
 
     } catch (e) {
@@ -267,15 +258,15 @@ function executeJSXFile(filePath) {
             return "Error: JSX file not found - " + filePath;
         }
 
-        // Read and evaluate the JSX file
-        jsxFile.open('r');
-        var jsxContent = jsxFile.read();
-        jsxFile.close();
+        // Use $.evalFile() which is the proper way to execute JSX scripts
+        var result = $.evalFile(jsxFile);
 
-        // Execute the script content
-        var result = eval(jsxContent);
-
-        return result ? result.toString() : "true";
+        // Return the result or success message
+        if (result !== undefined && result !== null) {
+            return result.toString();
+        } else {
+            return "true";
+        }
 
     } catch (e) {
         return "Error: " + e.toString();

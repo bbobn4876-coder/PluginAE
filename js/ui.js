@@ -72,6 +72,8 @@ const UIManager = {
             backBtn: document.getElementById('backBtn'),
             breadcrumbPath: document.getElementById('breadcrumbPath'),
             refreshBtn: document.getElementById('refreshBtn'),
+            searchBtn: document.getElementById('searchBtn'),
+            searchInput: document.getElementById('searchInput'),
 
             // Content
             folderGrid: document.getElementById('folderGrid'),
@@ -96,6 +98,23 @@ const UIManager = {
         // Back button
         this.elements.backBtn.addEventListener('click', () => {
             this.navigateBack();
+        });
+
+        // Search button
+        this.elements.searchBtn.addEventListener('click', () => {
+            this.toggleSearch();
+        });
+
+        // Search input
+        this.elements.searchInput.addEventListener('input', (e) => {
+            this.filterFiles(e.target.value);
+        });
+
+        // Close search on Escape
+        this.elements.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.toggleSearch();
+            }
         });
     },
 
@@ -607,6 +626,17 @@ const UIManager = {
 
         const ext = fileItem.fileType?.toLowerCase();
 
+        // Check for .mp4 preview for .aep files
+        if (['aep', 'pack'].includes(ext) && fileItem.videoPreviewPath) {
+            // Show video preview for .aep file
+            videoPlayer.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
+            videoPlayerContainer.classList.remove('hidden');
+            videoPlayer.play().catch(err => {
+                console.log('Auto-play prevented:', err);
+            });
+            return;
+        }
+
         // Check for YouTube preview in info.json for any file type
         if (fileItem.info && fileItem.info.videoPreview) {
             // Extract src from iframe HTML if needed
@@ -751,8 +781,17 @@ const UIManager = {
                 }
             });
         } else if (ext === 'prst' || ext === 'ffx') {
-            // Animation preset - use Apply to Comp instead
-            this.showNotification('Use "Apply to Comp" button to apply presets to a selected layer');
+            // Apply animation preset to selected layer
+            this.showNotification('Applying preset to selected layer...');
+            window.AEInterface.applyPreset(fileItem.filePath, (result) => {
+                if (result === 'true') {
+                    this.showNotification('✓ Preset applied successfully!');
+                } else if (result.includes('Error')) {
+                    this.showNotification('✗ ' + result);
+                } else {
+                    this.showNotification('Applied: ' + result);
+                }
+            });
         } else if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tif', 'tiff', 'psd', 'ai', 'svg'].includes(ext)) {
             // Import image file as footage
             this.showNotification('Importing image into After Effects...');
@@ -809,6 +848,82 @@ const UIManager = {
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 3000);
+        }
+    },
+
+    /**
+     * Toggle search input visibility
+     */
+    toggleSearch: function() {
+        const searchInput = this.elements.searchInput;
+        const searchBtn = this.elements.searchBtn;
+
+        if (searchInput.classList.contains('active')) {
+            // Hide search
+            searchInput.classList.remove('active');
+            searchBtn.classList.remove('active');
+            searchInput.value = '';
+            // Show all items
+            this.filterFiles('');
+        } else {
+            // Show search
+            searchInput.classList.add('active');
+            searchBtn.classList.add('active');
+            // Focus on input after animation
+            setTimeout(() => {
+                searchInput.focus();
+            }, 100);
+        }
+    },
+
+    /**
+     * Filter files by search query
+     */
+    filterFiles: function(query) {
+        const grid = this.elements.folderGrid;
+        const items = grid.querySelectorAll('.folder-item, .file-item');
+
+        if (!query || query.trim() === '') {
+            // Show all items
+            items.forEach(item => {
+                item.style.display = '';
+            });
+            return;
+        }
+
+        const searchQuery = query.toLowerCase().trim();
+        let visibleCount = 0;
+
+        items.forEach(item => {
+            const name = item.querySelector('.item-name');
+            if (name) {
+                const itemName = name.textContent.toLowerCase();
+                if (itemName.includes(searchQuery)) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+
+        // Show message if no results
+        if (visibleCount === 0 && items.length > 0) {
+            const existingMessage = grid.querySelector('.search-no-results');
+            if (!existingMessage) {
+                const message = document.createElement('div');
+                message.className = 'empty-state search-no-results';
+                message.innerHTML = `
+                    <div class="empty-state-icon">🔍</div>
+                    <div class="empty-state-text">No files found matching "${query}"</div>
+                `;
+                grid.appendChild(message);
+            }
+        } else {
+            const existingMessage = grid.querySelector('.search-no-results');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
         }
     }
 };

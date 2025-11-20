@@ -495,6 +495,55 @@ body {
     content: '';
 }
 
+/* Search Container */
+.search-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+.search-btn {
+    padding: 6px 10px;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+.search-btn:hover {
+    background: var(--hover-bg);
+    color: var(--accent-color);
+}
+
+.search-btn.active {
+    color: var(--accent-color);
+}
+
+.search-input {
+    width: 0;
+    padding: 6px 0;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.search-input.active {
+    width: 150px;
+    padding: 6px 12px;
+    opacity: 1;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
 /* Content Section */
 .content-section {
     flex: 1;

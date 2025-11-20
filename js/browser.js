@@ -89,6 +89,19 @@ const FileBrowser = {
         const items = [];
         const folderMap = new Map();
 
+        // First pass: collect all .mp4 files by name (without extension)
+        const mp4Files = new Map();
+        if (files && Array.isArray(files)) {
+            files.forEach(file => {
+                if (file.type && file.type.toLowerCase() === 'mp4') {
+                    const baseName = file.name.replace(/\.mp4$/i, '');
+                    const folderPath = file.folder || '';
+                    const key = folderPath + '/' + baseName;
+                    mp4Files.set(key, file.path);
+                }
+            });
+        }
+
         // Process folders
         if (folders && Array.isArray(folders)) {
             folders.forEach(folder => {
@@ -109,36 +122,45 @@ const FileBrowser = {
             });
         }
 
-        // Process files
+        // Process files (skip .mp4 files)
         if (files && Array.isArray(files)) {
             files.forEach(file => {
+                // Skip .mp4 files - they will be used as previews only
+                if (file.type && file.type.toLowerCase() === 'mp4') {
+                    return;
+                }
+
                 const folderPath = file.folder || '';
                 const topLevelFolder = folderPath.split('/')[0];
 
+                // Check if there's a matching .mp4 file for .aep files
+                let videoPreviewPath = null;
+                if (file.type && file.type.toLowerCase() === 'aep') {
+                    const baseName = file.name.replace(/\.aep$/i, '');
+                    const key = folderPath + '/' + baseName;
+                    if (mp4Files.has(key)) {
+                        videoPreviewPath = mp4Files.get(key);
+                    }
+                }
+
+                const fileObj = {
+                    type: 'file',
+                    name: this.decodeFileName(file.name),
+                    fileName: this.decodeFileName(file.name),
+                    filePath: file.path,
+                    fileSize: file.size || 0,
+                    fileType: file.type,
+                    folder: file.folder,
+                    info: file.info || null,
+                    videoPreviewPath: videoPreviewPath
+                };
+
                 if (topLevelFolder && folderMap.has(topLevelFolder)) {
                     // File belongs to a folder
-                    folderMap.get(topLevelFolder).files.push({
-                        type: 'file',
-                        name: this.decodeFileName(file.name),
-                        fileName: this.decodeFileName(file.name),
-                        filePath: file.path,
-                        fileSize: file.size || 0,
-                        fileType: file.type,
-                        folder: file.folder,
-                        info: file.info || null
-                    });
+                    folderMap.get(topLevelFolder).files.push(fileObj);
                 } else if (!folderPath) {
                     // File is in root of FluxMotion folder
-                    items.push({
-                        type: 'file',
-                        name: this.decodeFileName(file.name),
-                        fileName: this.decodeFileName(file.name),
-                        filePath: file.path,
-                        fileSize: file.size || 0,
-                        fileType: file.type,
-                        folder: '',
-                        info: file.info || null
-                    });
+                    items.push(fileObj);
                 }
             });
         }

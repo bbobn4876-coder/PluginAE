@@ -19,6 +19,10 @@ const UIManager = {
             videoPlayer: document.getElementById('videoPlayer'),
             imagePreview: document.getElementById('imagePreview'),
             youtubePreview: document.getElementById('youtubePreview'),
+            audioPlayerContainer: document.getElementById('audioPlayerContainer'),
+            audioPlayer: document.getElementById('audioPlayer'),
+            volumeSlider: document.getElementById('volumeSlider'),
+            volumeValue: document.getElementById('volumeValue'),
             currentFileName: document.getElementById('currentFileName'),
 
             // Navigation
@@ -34,6 +38,7 @@ const UIManager = {
         };
 
         this.setupEventListeners();
+        this.setupAudioPlayer();
     },
 
     /**
@@ -52,10 +57,29 @@ const UIManager = {
     },
 
     /**
-     * Load files from FluxMotion folder
+     * Setup audio player
+     */
+    setupAudioPlayer: function() {
+        const audioPlayer = this.elements.audioPlayer;
+        const volumeSlider = this.elements.volumeSlider;
+        const volumeValue = this.elements.volumeValue;
+
+        // Set initial volume to 50%
+        audioPlayer.volume = 0.5;
+
+        // Volume slider event
+        volumeSlider.addEventListener('input', (e) => {
+            const volume = e.target.value / 100;
+            audioPlayer.volume = volume;
+            volumeValue.textContent = e.target.value + '%';
+        });
+    },
+
+    /**
+     * Load files from Projects folder
      */
     loadFiles: function() {
-        this.showNotification('Loading files from FluxMotion folder...');
+        this.showNotification('Loading files from Projects folder...');
 
         FileBrowser.loadProjectsFolder((result) => {
             if (result.error) {
@@ -82,7 +106,7 @@ const UIManager = {
                 <div class="empty-state">
                     <div class="empty-state-icon">📁</div>
                     <div class="empty-state-text">
-                        No files found. Place files in the FluxMotion folder and click Refresh.
+                        No files found. Place files in the Projects folder and click Refresh.
                     </div>
                 </div>
             `;
@@ -280,12 +304,15 @@ const UIManager = {
         const videoPlayer = this.elements.videoPlayer;
         const imagePreview = this.elements.imagePreview;
         const youtubePreview = this.elements.youtubePreview;
+        const audioPlayerContainer = this.elements.audioPlayerContainer;
+        const audioPlayer = this.elements.audioPlayer;
         const placeholder = this.elements.videoPlaceholder;
 
         // Hide all preview elements
         videoPlayer.classList.add('hidden');
         imagePreview.classList.add('hidden');
         youtubePreview.classList.add('hidden');
+        audioPlayerContainer.classList.add('hidden');
         placeholder.classList.add('hidden');
 
         const ext = fileItem.fileType?.toLowerCase();
@@ -318,6 +345,10 @@ const UIManager = {
             // Video preview
             videoPlayer.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
             videoPlayer.classList.remove('hidden');
+        } else if (['mp3', 'wav'].includes(ext)) {
+            // Audio preview
+            audioPlayer.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
+            audioPlayerContainer.classList.remove('hidden');
         } else {
             // Show placeholder for non-previewable files
             placeholder.classList.remove('hidden');
@@ -336,11 +367,13 @@ const UIManager = {
         this.elements.videoPlayer.classList.add('hidden');
         this.elements.imagePreview.classList.add('hidden');
         this.elements.youtubePreview.classList.add('hidden');
+        this.elements.audioPlayerContainer.classList.add('hidden');
         this.elements.videoPlaceholder.classList.remove('hidden');
 
         this.elements.videoPlayer.src = '';
         this.elements.imagePreview.src = '';
         this.elements.youtubePreview.src = '';
+        this.elements.audioPlayer.src = '';
         this.elements.currentFileName.textContent = 'No file selected';
 
         this.selectedItem = null;

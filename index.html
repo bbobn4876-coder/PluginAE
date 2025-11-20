@@ -36,6 +36,17 @@
                 <iframe id="youtubePreview" class="youtube-preview hidden" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
                 <video id="videoPlayer" class="video-player hidden" controls></video>
                 <img id="imagePreview" class="image-preview hidden" alt="Preview">
+                <div id="audioPlayerContainer" class="audio-player-container hidden">
+                    <div class="audio-player-wrapper">
+                        <div class="audio-icon">🎵</div>
+                        <audio id="audioPlayer" class="audio-player" controls></audio>
+                        <div class="volume-control">
+                            <span class="volume-icon">🔊</span>
+                            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
+                            <span id="volumeValue" class="volume-value">50%</span>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="preview-controls">
                 <div class="preview-info">
@@ -44,6 +55,11 @@
             </div>
         </section>
 
+        <!-- FluxMotion Title -->
+        <div class="plugin-header">
+            <h1 class="gradient-title">FluxMotion</h1>
+        </div>
+
         <!-- Navigation Breadcrumbs -->
         <section class="navigation-section">
             <div class="breadcrumbs">
@@ -51,7 +67,7 @@
                     <span>←</span>
                 </button>
                 <div id="breadcrumbPath" class="breadcrumb-path">
-                    <span class="breadcrumb-item active">FluxMotion</span>
+                    <span class="breadcrumb-item active">Projects</span>
                 </div>
                 <button id="refreshBtn" class="btn btn-secondary btn-small">
                     <span>🔄</span> Refresh
@@ -65,7 +81,7 @@
                 <!-- Folders and files will be rendered here -->
                 <div class="empty-state">
                     <div class="empty-state-icon">📁</div>
-                    <div class="empty-state-text">Click "Refresh" to load files from FluxMotion folder</div>
+                    <div class="empty-state-text">Click "Refresh" to load files from Projects folder</div>
                 </div>
             </div>
         </section>

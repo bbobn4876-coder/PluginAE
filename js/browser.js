@@ -177,7 +177,7 @@ const FileBrowser = {
      * Get current breadcrumb path
      */
     getBreadcrumbs: function() {
-        const crumbs = [{ name: 'FluxMotion', path: [] }];
+        const crumbs = [{ name: 'Projects', path: [] }];
 
         this.currentPath.forEach((folder, index) => {
             crumbs.push({

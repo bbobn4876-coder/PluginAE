@@ -46,19 +46,19 @@ function openAEProject(filePath) {
             // Import as project - this adds the project items to the current project
             app.project.importFile(importOptions);
 
-            // Find or create "FluxMotion" folder
+            // Find or create "Projects" folder
             var fluxMotionFolder = null;
             for (var i = 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
-                if (item instanceof FolderItem && item.name === "FluxMotion") {
+                if (item instanceof FolderItem && item.name === "Projects") {
                     fluxMotionFolder = item;
                     break;
                 }
             }
 
-            // Create FluxMotion folder if it doesn't exist
+            // Create Projects folder if it doesn't exist
             if (!fluxMotionFolder) {
-                fluxMotionFolder = app.project.items.addFolder("FluxMotion");
+                fluxMotionFolder = app.project.items.addFolder("Projects");
             }
 
             // Get .aep file name without extension
@@ -454,11 +454,11 @@ function scanProjectsFolder() {
     try {
         // Get extension path
         var extensionPath = new File($.fileName).parent.parent.fsName;
-        var projectsFolder = new Folder(extensionPath + "/FluxMotion");
+        var projectsFolder = new Folder(extensionPath + "/PluginAE-claude-ae-plugin-aep-preview-015QZVTK55uxUEVxkVxRXuPD");
 
         if (!projectsFolder.exists) {
             return JSON.stringify({
-                error: "FluxMotion folder not found at: " + projectsFolder.fsName
+                error: "Projects folder not found at: " + projectsFolder.fsName
             });
         }
 

@@ -254,6 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize UI
         UIManager.init();
 
+        // Auto-refresh Projects folder when entering main app
+        UIManager.loadFiles();
+
         console.log('AEP Preview Plugin ready');
 
         // Debug info

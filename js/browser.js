@@ -153,13 +153,14 @@ const FileBrowser = {
             });
         }
 
-        // Process files (skip .mp4, .gif, and .png files)
+        // Process files (skip .mp4, .gif, .png, .jpg, and .mov files)
         if (files && Array.isArray(files)) {
             files.forEach(file => {
                 const fileType = file.type ? file.type.toLowerCase() : '';
 
-                // Skip .mp4, .gif, and .png files - they will be used as previews only
-                if (fileType === 'mp4' || fileType === 'gif' || fileType === 'png') {
+                // Skip .mp4, .gif, .png, .jpg, and .mov files - they will be used as previews only
+                if (fileType === 'mp4' || fileType === 'gif' || fileType === 'png' ||
+                    fileType === 'jpg' || fileType === 'jpeg' || fileType === 'mov') {
                     return;
                 }
 
@@ -363,6 +364,15 @@ const FileBrowser = {
         const searchItems = (items, parentPath = '') => {
             items.forEach(item => {
                 const itemName = item.name.toLowerCase();
+
+                // Skip media files from search (.png, .jpg, .mp4, .gif, .mov)
+                if (item.type === 'file') {
+                    const fileType = item.fileType ? item.fileType.toLowerCase() : '';
+                    if (fileType === 'png' || fileType === 'jpg' || fileType === 'jpeg' ||
+                        fileType === 'mp4' || fileType === 'gif' || fileType === 'mov') {
+                        return;
+                    }
+                }
 
                 // Check if item name matches search query
                 if (itemName.includes(searchQuery)) {

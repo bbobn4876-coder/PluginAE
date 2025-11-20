@@ -389,6 +389,8 @@ const UIManager = {
             this.showNotification(`Loaded ${result.fileCount} files from ${result.folderCount} folders`);
             this.renderFolderGrid();
             this.updateBreadcrumbs();
+            // Show static preview for Projects folder
+            this.showProjectsPreview();
         });
     },
 
@@ -523,9 +525,9 @@ const UIManager = {
             } else {
                 this.currentItems = result.items;
                 this.renderFolderGrid();
+                this.updateBreadcrumbs();
+                this.clearPreview();
             }
-            this.updateBreadcrumbs();
-            this.clearPreview();
         }
     },
 
@@ -711,6 +713,32 @@ const UIManager = {
         this.elements.currentFileName.textContent = 'No file selected';
 
         this.selectedItem = null;
+
+        // Show static preview if in Projects folder
+        if (FileBrowser.currentPath.length === 0) {
+            this.showProjectsPreview();
+        }
+    },
+
+    /**
+     * Show static preview for Projects folder
+     */
+    showProjectsPreview: function() {
+        // Only show if in root Projects folder (no subfolders)
+        if (FileBrowser.currentPath.length !== 0) {
+            return;
+        }
+
+        // Hide all other preview elements
+        this.elements.videoPlayerContainer.classList.add('hidden');
+        this.elements.youtubePreview.classList.add('hidden');
+        this.elements.audioPlayerContainer.classList.add('hidden');
+        this.elements.videoPlaceholder.classList.add('hidden');
+
+        // Show static image for Projects folder
+        this.elements.imagePreview.src = 'img/PreviewProjects.jpg';
+        this.elements.imagePreview.classList.remove('hidden');
+        this.elements.currentFileName.textContent = 'Projects';
     },
 
     /**

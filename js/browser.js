@@ -155,14 +155,17 @@ const FileBrowser = {
             });
         }
 
-        // Process files (skip .mp4, .gif, .png, .jpg, and .mov files)
+        // Process files (skip .mp4, .gif, .png, .jpg, .mov, and .json files)
         if (files && Array.isArray(files)) {
             files.forEach(file => {
                 const fileType = file.type ? file.type.toLowerCase() : '';
+                const fileName = file.name ? file.name.toLowerCase() : '';
 
-                // Skip .mp4, .gif, .png, .jpg, and .mov files - they will be used as previews only
+                // Skip .mp4, .gif, .png, .jpg, .mov files - they will be used as previews only
+                // Also skip .cache.json and other .json files
                 if (fileType === 'mp4' || fileType === 'gif' || fileType === 'png' ||
-                    fileType === 'jpg' || fileType === 'jpeg' || fileType === 'mov') {
+                    fileType === 'jpg' || fileType === 'jpeg' || fileType === 'mov' ||
+                    fileType === 'json' || fileName.endsWith('.cache.json')) {
                     return;
                 }
 

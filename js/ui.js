@@ -601,11 +601,63 @@ const UIManager = {
             return;
         }
 
+        // Process items: for .aep files, auto-expand and show compositions
         this.currentItems.forEach(item => {
+            // Skip .aep files - they will be auto-expanded to show compositions
+            if (item.type === 'file' && ['aep', 'pack'].includes(item.fileType?.toLowerCase())) {
+                // Auto-expand .aep file and show compositions inline
+                this.renderAepCompositions(item, grid);
+                return;
+            }
+
             const element = item.type === 'folder'
                 ? this.createFolderElement(item)
                 : this.createFileElement(item);
             grid.appendChild(element);
+        });
+    },
+
+    /**
+     * Render compositions from .aep file inline (without showing the .aep file itself)
+     */
+    renderAepCompositions: function(aepFileItem, grid) {
+        // Get contents of .aep file
+        window.AEInterface.getAepContents(aepFileItem.filePath, (result) => {
+            try {
+                const contents = JSON.parse(result);
+
+                if (contents.error) {
+                    console.error('Error loading .aep contents:', contents.error);
+                    return;
+                }
+
+                // Create composition items
+                if (contents.compositions && contents.compositions.length > 0) {
+                    contents.compositions.forEach(comp => {
+                        const compositionItem = {
+                            type: 'aep-composition',
+                            name: comp.name,
+                            fileName: comp.name,
+                            fileType: 'composition',
+                            aepPath: aepFileItem.filePath,
+                            compositionName: comp.name,
+                            previewPath: aepFileItem.videoPreviewPath, // Use .aep preview if available
+                            info: {
+                                width: comp.width,
+                                height: comp.height,
+                                duration: comp.duration,
+                                frameRate: comp.frameRate,
+                                numLayers: comp.numLayers
+                            }
+                        };
+
+                        const element = this.createFileElement(compositionItem);
+                        grid.appendChild(element);
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing .aep contents:', e);
+            }
         });
     },
 

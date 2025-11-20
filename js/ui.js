@@ -797,22 +797,17 @@ const UIManager = {
             // Don't open file if clicking favorite button
             if (e.target.closest('.favorite-btn')) return;
 
-            // For .aep files, open them as folders like regular folders
-            if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
-                this.openAepAsFolder(fileItem);
-            } else {
-                // For other files, select them for preview
-                this.selectFile(fileItem, div);
-            }
+            // For all files including .aep, just select them for preview
+            this.selectFile(fileItem, div);
         });
 
         div.addEventListener('dblclick', (e) => {
             // Don't open file if clicking favorite button
             if (e.target.closest('.favorite-btn')) return;
 
-            // For .aep files, already handled in click
+            // For .aep and .pack files, import to timeline (openAEProject behavior)
             if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
-                return;
+                this.importAepToTimeline(fileItem);
             } else if (fileItem.type === 'aep-composition') {
                 // For compositions inside .aep files, import to timeline
                 this.importCompositionToTimeline(fileItem);
@@ -908,6 +903,29 @@ const UIManager = {
             this.renderFolderGrid();
             this.updateBreadcrumbs();
             this.clearPreview();
+        });
+    },
+
+    /**
+     * Import .aep project file to timeline (opens and imports first composition)
+     */
+    importAepToTimeline: function(fileItem) {
+        if (!fileItem.filePath) {
+            this.showNotification('✗ Invalid file path');
+            return;
+        }
+
+        this.showNotification('Importing project to timeline...');
+
+        // Use openAEProject which imports the first composition to timeline
+        window.AEInterface.openProject(fileItem.filePath, (result) => {
+            if (result === 'true') {
+                this.showNotification('✓ Project imported to timeline!');
+            } else if (result.includes('Error')) {
+                this.showNotification('✗ ' + result);
+            } else {
+                this.showNotification('✓ ' + result);
+            }
         });
     },
 
@@ -1111,22 +1129,35 @@ const UIManager = {
         const ext = fileItem.fileType?.toLowerCase();
 
         // Check for video/gif preview for .aep files
-        if (['aep', 'pack'].includes(ext) && fileItem.videoPreviewPath) {
-            // Determine if it's a .gif or video file
-            const previewExt = fileItem.videoPreviewPath.split('.').pop().toLowerCase();
+        if (['aep', 'pack'].includes(ext)) {
+            // First check if there's a video preview path
+            if (fileItem.videoPreviewPath) {
+                // Determine if it's a .gif or video file
+                const previewExt = fileItem.videoPreviewPath.split('.').pop().toLowerCase();
 
-            if (previewExt === 'gif') {
-                // Show .gif as image preview
-                imagePreview.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
-                imagePreview.classList.remove('hidden');
-            } else {
-                // Show video preview (.mp4, etc.)
-                videoPlayer.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
-                videoPlayerContainer.classList.remove('hidden');
-                videoPlayer.play().catch(err => {
-                    console.log('Auto-play prevented:', err);
-                });
+                if (previewExt === 'gif') {
+                    // Show .gif as image preview with autoplay
+                    imagePreview.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
+                    imagePreview.classList.remove('hidden');
+                } else if (['mp4', 'mov', 'webm'].includes(previewExt)) {
+                    // Show video preview (.mp4, etc.) with loop and autoplay
+                    videoPlayer.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
+                    videoPlayer.loop = true;
+                    videoPlayer.muted = true;
+                    videoPlayerContainer.classList.remove('hidden');
+                    videoPlayer.play().catch(err => {
+                        console.log('Auto-play prevented:', err);
+                    });
+                }
+                return;
             }
+
+            // If no video preview, show placeholder with icon
+            placeholder.classList.remove('hidden');
+            const iconElem = placeholder.querySelector('.placeholder-icon');
+            const textElem = placeholder.querySelector('.placeholder-text');
+            iconElem.textContent = FileBrowser.getFileIcon(ext);
+            textElem.textContent = this.decodeFileName(fileItem.fileName);
             return;
         }
 

@@ -92,24 +92,34 @@ const FileBrowser = {
         const items = [];
         const folderMap = new Map();
 
-        // First pass: collect all .mp4 and .gif files by name (without extension) for .aep previews
-        const videoPreviewFiles = new Map();
-        // Collect all .png files by name (without extension) for folder previews
-        const pngFiles = new Map();
+        // First pass: collect all preview files
+        const videoPreviewFiles = new Map(); // .mp4, .gif, .mov for .aep previews
+        const pngFiles = new Map(); // .png files for folder previews
 
         if (files && Array.isArray(files)) {
             files.forEach(file => {
                 const fileType = file.type ? file.type.toLowerCase() : '';
 
-                // Collect video preview files (.mp4 and .gif)
-                if (fileType === 'mp4' || fileType === 'gif') {
-                    const baseName = file.name.replace(/\.(mp4|gif)$/i, '');
+                // Collect video preview files (.mp4, .gif, .mov)
+                if (fileType === 'mp4' || fileType === 'gif' || fileType === 'mov') {
+                    const baseName = file.name.replace(/\.(mp4|gif|mov)$/i, '');
                     const folderPath = file.folder || '';
-                    const key = folderPath + '/' + baseName;
 
-                    // Prefer .gif over .mp4 if both exist
-                    if (fileType === 'gif' || !videoPreviewFiles.has(key)) {
-                        videoPreviewFiles.set(key, file.path);
+                    // Create multiple keys for flexibility
+                    const key1 = folderPath + '/' + baseName;
+                    const key2 = baseName; // Also try without folder path
+
+                    // Priority: .gif > .mp4 > .mov (gif is smallest and best for preview)
+                    const priorityScore = fileType === 'gif' ? 3 : (fileType === 'mp4' ? 2 : 1);
+
+                    // Store with both keys if they don't exist or if this file has higher priority
+                    if (!videoPreviewFiles.has(key1) ||
+                        (videoPreviewFiles.get(key1).priority < priorityScore)) {
+                        videoPreviewFiles.set(key1, { path: file.path, priority: priorityScore });
+                    }
+                    if (!videoPreviewFiles.has(key2) ||
+                        (videoPreviewFiles.get(key2).priority < priorityScore)) {
+                        videoPreviewFiles.set(key2, { path: file.path, priority: priorityScore });
                     }
                 }
 
@@ -172,13 +182,29 @@ const FileBrowser = {
                 const folderPath = file.folder || '';
                 const topLevelFolder = folderPath.split('/')[0];
 
-                // Check if there's a matching video preview file (.gif or .mp4) for .aep files
+                // Check if there's a matching video preview file (.gif, .mp4 or .mov) for .aep files
                 let videoPreviewPath = null;
-                if (fileType === 'aep') {
-                    const baseName = file.name.replace(/\.aep$/i, '');
-                    const key = folderPath + '/' + baseName;
-                    if (videoPreviewFiles.has(key)) {
-                        videoPreviewPath = videoPreviewFiles.get(key);
+                if (fileType === 'aep' || fileType === 'pack') {
+                    const baseName = file.name.replace(/\.(aep|pack)$/i, '');
+                    const folderPath = file.folder || '';
+
+                    // Try multiple keys to find preview
+                    const possibleKeys = [
+                        folderPath + '/' + baseName, // Same folder, same name
+                        baseName, // Just the name
+                        folderPath + '/' + file.name.replace(/\.(aep|pack)$/i, '') // Without folder prefix
+                    ];
+
+                    for (const key of possibleKeys) {
+                        if (videoPreviewFiles.has(key)) {
+                            videoPreviewPath = videoPreviewFiles.get(key).path;
+                            console.log('Found preview for', file.name, ':', videoPreviewPath);
+                            break;
+                        }
+                    }
+
+                    if (!videoPreviewPath) {
+                        console.log('No preview found for', file.name, 'tried keys:', possibleKeys);
                     }
                 }
 

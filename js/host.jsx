@@ -30,8 +30,14 @@ function openAEProject(filePath) {
             return "Error: No active composition. Please create or open a composition first.";
         }
 
-        // Remember the number of items before import
-        var itemCountBefore = app.project.numItems;
+        // Remember IDs of all existing items before import
+        var existingItemIds = {};
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+            if (item) {
+                existingItemIds[item.id] = true;
+            }
+        }
 
         // Import the project file into current project
         var importOptions = new ImportOptions(projectFile);
@@ -40,33 +46,44 @@ function openAEProject(filePath) {
             // Import as project - this adds the project items to the current project
             app.project.importFile(importOptions);
 
-            // Find newly imported compositions and add them to timeline
+            // Find ALL newly imported compositions (they won't be in our existing IDs list)
             var addedCount = 0;
-            for (var i = itemCountBefore + 1; i <= app.project.numItems; i++) {
+            var newCompositions = [];
+
+            // Scan through ALL items in the project (not just new range)
+            for (var i = 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
 
-                // Add only compositions to the active composition's timeline
-                // Do NOT add footage items (FootageItem) - those are just source files
-                if (item instanceof CompItem) {
-                    try {
-                        // Add to timeline at the top
-                        var newLayer = activeComp.layers.add(item);
-
-                        // Position at current time
-                        newLayer.startTime = activeComp.time;
-
-                        addedCount++;
-                    } catch (addError) {
-                        // Continue even if one item fails
-                        continue;
+                // Check if this item is new (wasn't in our list before)
+                if (item && !existingItemIds[item.id]) {
+                    // Only process compositions
+                    if (item instanceof CompItem) {
+                        newCompositions.push(item);
                     }
+                }
+            }
+
+            // Add all found compositions to the timeline
+            for (var j = 0; j < newCompositions.length; j++) {
+                var comp = newCompositions[j];
+                try {
+                    // Add to timeline at the top
+                    var newLayer = activeComp.layers.add(comp);
+
+                    // Position at current time
+                    newLayer.startTime = activeComp.time;
+
+                    addedCount++;
+                } catch (addError) {
+                    // Continue even if one item fails
+                    continue;
                 }
             }
 
             if (addedCount > 0) {
                 return "true";
             } else {
-                return "Error: Project imported but no items were added to timeline";
+                return "Error: Project imported but no compositions were found. The file may contain only footage items.";
             }
         } else {
             return "Error: Cannot import this project file";

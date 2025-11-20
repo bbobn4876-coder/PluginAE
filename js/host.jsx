@@ -791,6 +791,7 @@ function renderCompPreview(comp, outputPath) {
 /**
  * Get contents of an .aep file (list of compositions and footage items)
  * Uses caching to avoid reopening projects
+ * Uses import method to avoid showing "Opening Project" popup
  * @param {string} filePath - Full path to the .aep file
  * @return {string} JSON string with contents
  */
@@ -833,19 +834,27 @@ function getAepContents(filePath) {
             }
         }
 
-        // Cache miss or invalid - need to open project
-        // Save current project state
-        var currentProject = app.project.file;
-        var currentProjectPath = currentProject ? currentProject.fsName : null;
-
+        // Cache miss or invalid - use import method (no popup, no project switching)
         try {
-            // Close current project without saving
-            if (currentProject !== null) {
-                app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
+            // Remember IDs of all existing items before import
+            var existingItemIds = {};
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+                if (item) {
+                    existingItemIds[item.id] = true;
+                }
             }
 
-            // Open the target project
-            app.open(projectFile);
+            // Import the project file into current project (no popup, no switching)
+            var importOptions = new ImportOptions(projectFile);
+
+            if (!importOptions.canImportAs(ImportAsType.PROJECT)) {
+                return JSON.stringify({
+                    error: "Cannot import this project file"
+                });
+            }
+
+            app.project.importFile(importOptions);
 
             var contents = {
                 compositions: [],
@@ -853,31 +862,38 @@ function getAepContents(filePath) {
                 folders: []
             };
 
-            // Collect only compositions (no rendering, no footage)
+            // Collect only compositions from newly imported items
+            var importedItems = [];
             for (var i = 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
 
-                if (item instanceof CompItem) {
-                    var compData = {
-                        id: item.id,
-                        name: item.name,
-                        width: item.width,
-                        height: item.height,
-                        duration: Math.round(item.duration * 100) / 100,
-                        frameRate: item.frameRate,
-                        numLayers: item.numLayers
-                    };
+                // Check if this is a newly imported item
+                if (item && !existingItemIds[item.id]) {
+                    importedItems.push(item);
 
-                    contents.compositions.push(compData);
+                    if (item instanceof CompItem) {
+                        var compData = {
+                            id: item.id,
+                            name: item.name,
+                            width: item.width,
+                            height: item.height,
+                            duration: Math.round(item.duration * 100) / 100,
+                            frameRate: item.frameRate,
+                            numLayers: item.numLayers
+                        };
+
+                        contents.compositions.push(compData);
+                    }
                 }
             }
 
-            // Close the analyzed project
-            app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
-
-            // Reopen previous project if there was one
-            if (currentProjectPath !== null) {
-                app.open(new File(currentProjectPath));
+            // Clean up: remove all imported items (we only needed the metadata)
+            for (var j = 0; j < importedItems.length; j++) {
+                try {
+                    importedItems[j].remove();
+                } catch (removeError) {
+                    // Continue even if removal fails
+                }
             }
 
             // Write to cache
@@ -897,14 +913,6 @@ function getAepContents(filePath) {
             return JSON.stringify(contents);
 
         } catch (innerError) {
-            // Try to restore previous project even if error occurred
-            if (currentProjectPath !== null) {
-                try {
-                    app.open(new File(currentProjectPath));
-                } catch (e) {
-                    // Ignore restoration errors
-                }
-            }
             throw innerError;
         }
 

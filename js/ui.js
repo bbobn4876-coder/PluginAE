@@ -7,6 +7,10 @@ const UIManager = {
     elements: {},
     currentItems: [],
     selectedItem: null,
+    audioContext: null,
+    audioAnalyser: null,
+    audioSource: null,
+    animationId: null,
 
     /**
      * Initialize UI elements
@@ -21,6 +25,7 @@ const UIManager = {
             youtubePreview: document.getElementById('youtubePreview'),
             audioPlayerContainer: document.getElementById('audioPlayerContainer'),
             audioPlayer: document.getElementById('audioPlayer'),
+            audioWaveform: document.getElementById('audioWaveform'),
             volumeSlider: document.getElementById('volumeSlider'),
             volumeValue: document.getElementById('volumeValue'),
             currentFileName: document.getElementById('currentFileName'),
@@ -73,6 +78,94 @@ const UIManager = {
             audioPlayer.volume = volume;
             volumeValue.textContent = e.target.value + '%';
         });
+
+        // Initialize audio visualization when playing
+        audioPlayer.addEventListener('play', () => {
+            this.initAudioVisualization();
+        });
+
+        // Stop visualization when paused
+        audioPlayer.addEventListener('pause', () => {
+            if (this.animationId) {
+                cancelAnimationFrame(this.animationId);
+                this.animationId = null;
+            }
+        });
+    },
+
+    /**
+     * Initialize audio visualization
+     */
+    initAudioVisualization: function() {
+        const audioPlayer = this.elements.audioPlayer;
+        const canvas = this.elements.audioWaveform;
+
+        if (!canvas) return;
+
+        // Create audio context if not exists
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            this.audioAnalyser = this.audioContext.createAnalyser();
+            this.audioAnalyser.fftSize = 256;
+
+            // Create source from audio element
+            if (!this.audioSource) {
+                this.audioSource = this.audioContext.createMediaElementSource(audioPlayer);
+                this.audioSource.connect(this.audioAnalyser);
+                this.audioAnalyser.connect(this.audioContext.destination);
+            }
+        }
+
+        this.drawWaveform();
+    },
+
+    /**
+     * Draw audio waveform
+     */
+    drawWaveform: function() {
+        const canvas = this.elements.audioWaveform;
+        if (!canvas || !this.audioAnalyser) return;
+
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width = canvas.offsetWidth;
+        const height = canvas.height = canvas.offsetHeight;
+
+        const bufferLength = this.audioAnalyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const draw = () => {
+            this.animationId = requestAnimationFrame(draw);
+
+            this.audioAnalyser.getByteFrequencyData(dataArray);
+
+            // Clear canvas with gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0.3)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            const barWidth = (width / bufferLength) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                barHeight = (dataArray[i] / 255) * height * 0.8;
+
+                // Create gradient for bars
+                const barGradient = ctx.createLinearGradient(0, height - barHeight, 0, height);
+                barGradient.addColorStop(0, '#667eea');
+                barGradient.addColorStop(0.5, '#764ba2');
+                barGradient.addColorStop(1, '#f093fb');
+
+                ctx.fillStyle = barGradient;
+                ctx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
+
+                x += barWidth;
+            }
+        };
+
+        draw();
     },
 
     /**
@@ -129,21 +222,32 @@ const UIManager = {
         div.className = 'folder-item';
         div.title = `Open ${folderItem.name}`;
 
-        // Find first .png file in folder for preview
-        const pngFile = folderItem.files?.find(f =>
-            f.fileType?.toLowerCase() === 'png' ||
-            f.fileType?.toLowerCase() === 'jpg' ||
-            f.fileType?.toLowerCase() === 'jpeg' ||
-            f.fileType?.toLowerCase() === 'gif'
-        );
+        // Find first image or video file in folder for preview
+        const previewFile = folderItem.files?.find(f => {
+            const ext = f.fileType?.toLowerCase();
+            return ['png', 'jpg', 'jpeg', 'gif', 'mp4', 'mov', 'webm'].includes(ext);
+        });
 
-        // If there's a preview image, add it
-        if (pngFile) {
-            const preview = document.createElement('img');
-            preview.className = 'folder-preview';
-            preview.src = 'file:///' + pngFile.filePath.replace(/\\/g, '/');
-            preview.alt = folderItem.name;
-            div.appendChild(preview);
+        // If there's a preview file, add it
+        if (previewFile) {
+            const ext = previewFile.fileType?.toLowerCase();
+            if (['png', 'jpg', 'jpeg', 'gif'].includes(ext)) {
+                const preview = document.createElement('img');
+                preview.className = 'folder-preview';
+                preview.src = 'file:///' + previewFile.filePath.replace(/\\/g, '/');
+                preview.alt = folderItem.name;
+                div.appendChild(preview);
+            } else if (['mp4', 'mov', 'webm'].includes(ext)) {
+                const preview = document.createElement('video');
+                preview.className = 'folder-preview';
+                preview.src = 'file:///' + previewFile.filePath.replace(/\\/g, '/');
+                preview.muted = true;
+                preview.loop = true;
+                preview.autoplay = false;
+                preview.addEventListener('mouseenter', () => preview.play());
+                preview.addEventListener('mouseleave', () => preview.pause());
+                div.appendChild(preview);
+            }
         }
 
         const name = document.createElement('div');
@@ -153,7 +257,8 @@ const UIManager = {
 
         const info = document.createElement('div');
         info.className = 'item-info';
-        info.textContent = `${folderItem.files?.length || 0} items`;
+        const fileCount = folderItem.files?.length || 0;
+        info.textContent = `${fileCount} ${fileCount === 1 ? 'file' : 'files'}`;
 
         div.appendChild(name);
         div.appendChild(info);

@@ -1,7 +1,7 @@
 {
-  "name": "aep-preview",
+  "name": "fluxmotion",
   "version": "1.0.0",
-  "description": "Adobe After Effects CEP extension for managing and previewing .aep files",
+  "description": "FluxMotion - Adobe After Effects CEP extension for managing motion design assets and projects",
   "main": "index.html",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

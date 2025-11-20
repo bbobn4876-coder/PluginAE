@@ -57,6 +57,17 @@ body {
     color: var(--text-primary);
 }
 
+/* Gradient Title */
+.gradient-title {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
 .login-header p {
     font-size: 13px;
     color: var(--text-secondary);
@@ -236,7 +247,50 @@ body {
     text-align: center;
 }
 
-.folder-item:hover,
+.folder-item {
+    background: #e8e8e8;
+    border: 1px solid #d0d0d0;
+    position: relative;
+    min-height: 120px;
+}
+
+.folder-preview {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 70%;
+    object-fit: cover;
+    border-radius: 4px;
+    z-index: 1;
+    opacity: 0.9;
+}
+
+.folder-item .item-name {
+    position: relative;
+    z-index: 2;
+    margin-top: auto;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    color: #333;
+}
+
+.folder-item .item-info {
+    position: relative;
+    z-index: 2;
+    color: #666;
+}
+
+.folder-item:hover {
+    background: #f0f0f0;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 .file-item:hover {
     background: var(--hover-bg);
     border-color: var(--accent-color);
@@ -244,7 +298,12 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-.folder-item.selected,
+.folder-item.selected {
+    border-color: #667eea;
+    background: #f0f0f0;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
 .file-item.selected {
     border-color: var(--accent-color);
     background: var(--hover-bg);

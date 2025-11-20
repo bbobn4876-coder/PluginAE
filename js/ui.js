@@ -121,9 +121,22 @@ const UIManager = {
         div.className = 'folder-item';
         div.title = `Open ${folderItem.name}`;
 
-        const icon = document.createElement('div');
-        icon.className = 'item-icon';
-        icon.textContent = '📁';
+        // Find first .png file in folder for preview
+        const pngFile = folderItem.files?.find(f =>
+            f.fileType?.toLowerCase() === 'png' ||
+            f.fileType?.toLowerCase() === 'jpg' ||
+            f.fileType?.toLowerCase() === 'jpeg' ||
+            f.fileType?.toLowerCase() === 'gif'
+        );
+
+        // If there's a preview image, add it
+        if (pngFile) {
+            const preview = document.createElement('img');
+            preview.className = 'folder-preview';
+            preview.src = 'file:///' + pngFile.filePath.replace(/\\/g, '/');
+            preview.alt = folderItem.name;
+            div.appendChild(preview);
+        }
 
         const name = document.createElement('div');
         name.className = 'item-name';
@@ -133,7 +146,6 @@ const UIManager = {
         info.className = 'item-info';
         info.textContent = `${folderItem.files?.length || 0} items`;
 
-        div.appendChild(icon);
         div.appendChild(name);
         div.appendChild(info);
 

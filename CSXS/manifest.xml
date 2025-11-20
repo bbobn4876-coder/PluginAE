@@ -27,7 +27,7 @@
         </Lifecycle>
         <UI>
           <Type>Panel</Type>
-          <Menu>AEP Preview</Menu>
+          <Menu>FluxMotion</Menu>
           <Geometry>
             <Size>
               <Height>600</Height>

@@ -828,13 +828,7 @@ function getAepContents(filePath) {
                 folders: []
             };
 
-            // Get temp folder for preview images
-            var tempFolder = Folder.temp.fsName;
-
-            // Get base name of the .aep file for preview naming
-            var aepBaseName = projectFile.name.replace(/\.(aep|pack)$/i, '');
-
-            // Collect all items
+            // Collect only compositions (no rendering, no footage)
             for (var i = 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
 
@@ -849,38 +843,7 @@ function getAepContents(filePath) {
                         numLayers: item.numLayers
                     };
 
-                    // Generate preview for composition
-                    var previewFileName = aepBaseName + "_" + item.name.replace(/[^a-zA-Z0-9]/g, '_') + "_preview.png";
-                    var previewPath = tempFolder + "/" + previewFileName;
-
-                    if (renderCompPreview(item, previewPath)) {
-                        compData.previewPath = previewPath;
-                    }
-
                     contents.compositions.push(compData);
-                } else if (item instanceof FootageItem) {
-                    var footageData = {
-                        id: item.id,
-                        name: item.name,
-                        width: item.width || 0,
-                        height: item.height || 0,
-                        duration: item.duration || 0
-                    };
-
-                    // For footage, try to use the source file as preview if it's an image
-                    if (item.file && item.file.exists) {
-                        var fileExt = item.file.name.split('.').pop().toLowerCase();
-                        if (fileExt === 'png' || fileExt === 'jpg' || fileExt === 'jpeg') {
-                            footageData.previewPath = item.file.fsName;
-                        }
-                    }
-
-                    contents.footage.push(footageData);
-                } else if (item instanceof FolderItem) {
-                    contents.folders.push({
-                        id: item.id,
-                        name: item.name
-                    });
                 }
             }
 

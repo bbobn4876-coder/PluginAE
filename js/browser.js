@@ -260,10 +260,10 @@ const FileBrowser = {
                     fileItem: fileItem
                 };
 
-                // Convert compositions and footage to file items
+                // Convert only compositions to file items (no footage)
                 const items = [];
 
-                // Add compositions
+                // Add only compositions
                 if (contents.compositions && contents.compositions.length > 0) {
                     contents.compositions.forEach(comp => {
                         items.push({
@@ -273,33 +273,12 @@ const FileBrowser = {
                             fileType: 'composition',
                             aepPath: fileItem.filePath,
                             compositionName: comp.name,
-                            previewPath: comp.previewPath || null,
                             info: {
                                 width: comp.width,
                                 height: comp.height,
                                 duration: comp.duration,
                                 frameRate: comp.frameRate,
                                 numLayers: comp.numLayers
-                            }
-                        });
-                    });
-                }
-
-                // Add footage items
-                if (contents.footage && contents.footage.length > 0) {
-                    contents.footage.forEach(footage => {
-                        items.push({
-                            type: 'aep-footage',
-                            name: footage.name,
-                            fileName: footage.name,
-                            fileType: 'footage',
-                            aepPath: fileItem.filePath,
-                            footageName: footage.name,
-                            previewPath: footage.previewPath || null,
-                            info: {
-                                width: footage.width,
-                                height: footage.height,
-                                duration: footage.duration
                             }
                         });
                     });

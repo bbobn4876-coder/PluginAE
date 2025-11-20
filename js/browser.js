@@ -273,6 +273,7 @@ const FileBrowser = {
                             fileType: 'composition',
                             aepPath: fileItem.filePath,
                             compositionName: comp.name,
+                            previewPath: comp.previewPath || null,
                             info: {
                                 width: comp.width,
                                 height: comp.height,
@@ -294,6 +295,7 @@ const FileBrowser = {
                             fileType: 'footage',
                             aepPath: fileItem.filePath,
                             footageName: footage.name,
+                            previewPath: footage.previewPath || null,
                             info: {
                                 width: footage.width,
                                 height: footage.height,
@@ -351,12 +353,19 @@ const FileBrowser = {
         // If we're exiting an .aep file, clear the current aep file
         if (typeof lastItem === 'object' && lastItem.type === 'aep') {
             this.currentAepFile = null;
+            // Need to reload from root and navigate to current path
+            return {
+                path: this.getCurrentPathString(),
+                reload: true,
+                restorePath: [...this.currentPath] // Keep copy of current path for restoration
+            };
         }
 
-        // Need to reload from root and navigate to current path
+        // For regular folders, need to reload from root and navigate to current path
         return {
             path: this.getCurrentPathString(),
-            reload: true
+            reload: true,
+            restorePath: [...this.currentPath] // Keep copy of current path for restoration
         };
     },
 

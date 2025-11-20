@@ -745,6 +745,50 @@ function renderPreview(compName, outputPath) {
 }
 
 /**
+ * Render composition preview to PNG file
+ * @param {CompItem} comp - Composition to render
+ * @param {string} outputPath - Path where to save the PNG
+ * @return {boolean} True on success, false on failure
+ */
+function renderCompPreview(comp, outputPath) {
+    try {
+        // Save current frame
+        comp.time = 0;
+
+        // Create a temporary render queue item
+        var renderItem = app.project.renderQueue.items.add(comp);
+
+        // Get the output module
+        var outputModule = renderItem.outputModule(1);
+
+        // Set output to PNG sequence (we'll only render 1 frame)
+        outputModule.applyTemplate("PNG Sequence");
+
+        // Set output file
+        var outFile = new File(outputPath);
+        outputModule.file = outFile;
+
+        // Set render settings to render only first frame
+        var renderSettings = renderItem.renderSettings;
+        renderSettings.timeSpan = 0; // Work Area Only
+
+        // Set work area to just the first frame
+        comp.workAreaStart = 0;
+        comp.workAreaDuration = comp.frameDuration;
+
+        // Start render
+        app.project.renderQueue.render();
+
+        // Remove render item from queue
+        renderItem.remove();
+
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
  * Get contents of an .aep file (list of compositions and footage items)
  * @param {string} filePath - Full path to the .aep file
  * @return {string} JSON string with contents
@@ -784,12 +828,18 @@ function getAepContents(filePath) {
                 folders: []
             };
 
+            // Get temp folder for preview images
+            var tempFolder = Folder.temp.fsName;
+
+            // Get base name of the .aep file for preview naming
+            var aepBaseName = projectFile.name.replace(/\.(aep|pack)$/i, '');
+
             // Collect all items
             for (var i = 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
 
                 if (item instanceof CompItem) {
-                    contents.compositions.push({
+                    var compData = {
                         id: item.id,
                         name: item.name,
                         width: item.width,
@@ -797,15 +847,35 @@ function getAepContents(filePath) {
                         duration: Math.round(item.duration * 100) / 100,
                         frameRate: item.frameRate,
                         numLayers: item.numLayers
-                    });
+                    };
+
+                    // Generate preview for composition
+                    var previewFileName = aepBaseName + "_" + item.name.replace(/[^a-zA-Z0-9]/g, '_') + "_preview.png";
+                    var previewPath = tempFolder + "/" + previewFileName;
+
+                    if (renderCompPreview(item, previewPath)) {
+                        compData.previewPath = previewPath;
+                    }
+
+                    contents.compositions.push(compData);
                 } else if (item instanceof FootageItem) {
-                    contents.footage.push({
+                    var footageData = {
                         id: item.id,
                         name: item.name,
                         width: item.width || 0,
                         height: item.height || 0,
                         duration: item.duration || 0
-                    });
+                    };
+
+                    // For footage, try to use the source file as preview if it's an image
+                    if (item.file && item.file.exists) {
+                        var fileExt = item.file.name.split('.').pop().toLowerCase();
+                        if (fileExt === 'png' || fileExt === 'jpg' || fileExt === 'jpeg') {
+                            footageData.previewPath = item.file.fsName;
+                        }
+                    }
+
+                    contents.footage.push(footageData);
                 } else if (item instanceof FolderItem) {
                     contents.folders.push({
                         id: item.id,

@@ -649,6 +649,16 @@ body {
     margin-bottom: 8px;
 }
 
+.item-preview-thumb {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
 .item-name {
     font-size: 11px;
     color: var(--text-primary);

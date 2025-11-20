@@ -470,9 +470,23 @@ const UIManager = {
         div.className = 'file-item';
         div.title = fileItem.fileName;
 
-        const icon = document.createElement('div');
-        icon.className = 'item-icon';
-        icon.textContent = FileBrowser.getFileIcon(fileItem.fileType);
+        // Check if item has preview thumbnail
+        const hasPreview = fileItem.previewPath || fileItem.videoPreviewPath;
+
+        // For items with preview, show thumbnail instead of icon
+        if (hasPreview) {
+            const preview = document.createElement('img');
+            preview.className = 'item-preview-thumb';
+            const previewPath = fileItem.previewPath || fileItem.videoPreviewPath;
+            preview.src = 'file:///' + previewPath.replace(/\\/g, '/');
+            preview.alt = fileItem.name;
+            div.appendChild(preview);
+        } else {
+            const icon = document.createElement('div');
+            icon.className = 'item-icon';
+            icon.textContent = FileBrowser.getFileIcon(fileItem.fileType);
+            div.appendChild(icon);
+        }
 
         const name = document.createElement('div');
         name.className = 'item-name';
@@ -491,18 +505,23 @@ const UIManager = {
             info.textContent = FileBrowser.formatFileSize(fileItem.fileSize);
         }
 
-        div.appendChild(icon);
         div.appendChild(name);
         div.appendChild(info);
 
         div.addEventListener('click', () => {
-            this.selectFile(fileItem, div);
+            // For .aep files, open them as folders like regular folders
+            if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
+                this.openAepAsFolder(fileItem);
+            } else {
+                // For other files, select them for preview
+                this.selectFile(fileItem, div);
+            }
         });
 
         div.addEventListener('dblclick', () => {
-            // For .aep files, open them as folders
+            // For .aep files, already handled in click
             if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
-                this.openAepAsFolder(fileItem);
+                return;
             } else if (fileItem.type === 'aep-composition') {
                 // For compositions inside .aep files, import to timeline
                 this.importCompositionToTimeline(fileItem);
@@ -586,7 +605,43 @@ const UIManager = {
         if (result) {
             if (result.reload) {
                 // Need to reload from root and navigate to path
-                this.loadFiles();
+                FileBrowser.loadProjectsFolder((loadResult) => {
+                    if (loadResult.error) {
+                        this.showNotification('Error: ' + loadResult.error);
+                        return;
+                    }
+
+                    FileBrowser.allItems = loadResult.items || [];
+
+                    // Restore path by navigating to each folder
+                    if (result.restorePath && result.restorePath.length > 0) {
+                        let currentItems = loadResult.items;
+
+                        for (let i = 0; i < result.restorePath.length; i++) {
+                            const pathPart = result.restorePath[i];
+                            const folderName = typeof pathPart === 'string' ? pathPart : pathPart.name;
+
+                            // Find folder in current items
+                            const folder = currentItems.find(item => item.type === 'folder' && item.name === folderName);
+
+                            if (folder) {
+                                currentItems = folder.files || [];
+                            } else {
+                                // Folder not found, break
+                                break;
+                            }
+                        }
+
+                        this.currentItems = currentItems;
+                    } else {
+                        // At root
+                        this.currentItems = loadResult.items;
+                    }
+
+                    this.renderFolderGrid();
+                    this.updateBreadcrumbs();
+                    this.clearPreview();
+                });
             } else {
                 this.currentItems = result.items;
                 this.renderFolderGrid();
@@ -630,7 +685,45 @@ const UIManager = {
      */
     navigateToPath: function(pathArray) {
         FileBrowser.currentPath = pathArray;
-        this.loadFiles();
+
+        // Reload from root and navigate to specified path
+        FileBrowser.loadProjectsFolder((loadResult) => {
+            if (loadResult.error) {
+                this.showNotification('Error: ' + loadResult.error);
+                return;
+            }
+
+            FileBrowser.allItems = loadResult.items || [];
+
+            // Navigate to the specified path
+            if (pathArray && pathArray.length > 0) {
+                let currentItems = loadResult.items;
+
+                for (let i = 0; i < pathArray.length; i++) {
+                    const pathPart = pathArray[i];
+                    const folderName = typeof pathPart === 'string' ? pathPart : pathPart.name;
+
+                    // Find folder in current items
+                    const folder = currentItems.find(item => item.type === 'folder' && item.name === folderName);
+
+                    if (folder) {
+                        currentItems = folder.files || [];
+                    } else {
+                        // Folder not found, break
+                        break;
+                    }
+                }
+
+                this.currentItems = currentItems;
+            } else {
+                // At root
+                this.currentItems = loadResult.items;
+            }
+
+            this.renderFolderGrid();
+            this.updateBreadcrumbs();
+            this.clearPreview();
+        });
     },
 
     /**

@@ -75,12 +75,21 @@ const UIManager = {
             searchBtn: document.getElementById('searchBtn'),
             searchInput: document.getElementById('searchInput'),
 
+            // Sidebar
+            folderTree: document.getElementById('folderTree'),
+            favoritesMenuItem: document.getElementById('favoritesMenuItem'),
+
             // Content
             folderGrid: document.getElementById('folderGrid'),
 
             // Toast
             toast: document.getElementById('notificationToast')
         };
+
+        // Initialize FavoritesManager
+        if (typeof FavoritesManager !== 'undefined') {
+            FavoritesManager.init();
+        }
 
         this.setupEventListeners();
         this.setupAudioPlayer();
@@ -116,6 +125,13 @@ const UIManager = {
                 this.toggleSearch();
             }
         });
+
+        // Favorites menu item
+        if (this.elements.favoritesMenuItem) {
+            this.elements.favoritesMenuItem.addEventListener('click', () => {
+                this.showFavorites();
+            });
+        }
 
         // Setup global drag-and-drop handler
         this.setupDragAndDrop();
@@ -424,11 +440,146 @@ const UIManager = {
             // Store all items for global search
             FileBrowser.allItems = result.items || [];
             this.showNotification(`Loaded ${result.fileCount} files from ${result.folderCount} folders`);
+
+            // Render folder tree in sidebar
+            this.renderFolderTree(result.items || []);
+
+            // Render content grid
             this.renderFolderGrid();
             this.updateBreadcrumbs();
             // Show static preview for Projects folder
             this.showProjectsPreview();
         });
+    },
+
+    /**
+     * Render folder tree in sidebar
+     */
+    renderFolderTree: function(items) {
+        const tree = this.elements.folderTree;
+        if (!tree) return;
+
+        tree.innerHTML = '';
+
+        // Get only folders
+        const folders = items.filter(item => item.type === 'folder');
+
+        if (folders.length === 0) {
+            tree.innerHTML = '<div class="empty-state-text" style="padding: 12px; text-align: center; color: var(--text-secondary);">No folders</div>';
+            return;
+        }
+
+        folders.forEach(folder => {
+            const treeItem = this.createFolderTreeItem(folder);
+            tree.appendChild(treeItem);
+        });
+    },
+
+    /**
+     * Create folder tree item
+     */
+    createFolderTreeItem: function(folder) {
+        const container = document.createElement('div');
+        container.className = 'folder-tree-item';
+
+        const header = document.createElement('div');
+        header.className = 'folder-tree-header';
+
+        // Check if folder has files
+        const hasFiles = folder.files && folder.files.length > 0;
+
+        if (hasFiles) {
+            const expandIcon = document.createElement('span');
+            expandIcon.className = 'folder-expand-icon';
+            expandIcon.textContent = '▶';
+            header.appendChild(expandIcon);
+        } else {
+            // Add spacer if no files
+            const spacer = document.createElement('span');
+            spacer.style.width = '16px';
+            header.appendChild(spacer);
+        }
+
+        const icon = document.createElement('span');
+        icon.className = 'folder-tree-icon';
+        icon.textContent = '📁';
+        header.appendChild(icon);
+
+        const name = document.createElement('span');
+        name.className = 'folder-tree-name';
+        name.textContent = this.decodeFileName(folder.name);
+        name.title = this.decodeFileName(folder.name);
+        header.appendChild(name);
+
+        container.appendChild(header);
+
+        // Add click handler to open folder
+        header.addEventListener('click', (e) => {
+            if (hasFiles) {
+                // Toggle expand/collapse
+                const isExpanded = header.classList.contains('expanded');
+                header.classList.toggle('expanded');
+
+                const children = container.querySelector('.folder-tree-children');
+                if (children) {
+                    children.classList.toggle('expanded');
+                }
+            }
+
+            // Also open folder in main view
+            this.openFolder(folder);
+        });
+
+        // Create children container if folder has files
+        if (hasFiles) {
+            const children = document.createElement('div');
+            children.className = 'folder-tree-children';
+
+            // Add files as simple items (no expand)
+            folder.files.forEach(file => {
+                if (file.type === 'folder') {
+                    // Recursive for subfolders
+                    const subItem = this.createFolderTreeItem(file);
+                    children.appendChild(subItem);
+                }
+            });
+
+            container.appendChild(children);
+        }
+
+        return container;
+    },
+
+    /**
+     * Show favorites view
+     */
+    showFavorites: function() {
+        if (typeof FavoritesManager === 'undefined') {
+            this.showNotification('Favorites not available');
+            return;
+        }
+
+        const favorites = FavoritesManager.getFavoriteItems();
+
+        if (favorites.length === 0) {
+            this.currentItems = [];
+            this.renderFolderGrid();
+            this.showNotification('No favorites yet. Click ⭐ on items to add them to favorites!');
+            return;
+        }
+
+        this.currentItems = favorites;
+        this.renderFolderGrid();
+        this.clearPreview();
+
+        // Update breadcrumbs to show Favorites
+        const pathElement = this.elements.breadcrumbPath;
+        pathElement.innerHTML = '<span class="breadcrumb-item active">⭐ Favorites</span>';
+
+        // Disable back button
+        this.elements.backBtn.disabled = true;
+
+        this.showNotification(`Showing ${favorites.length} favorite ${favorites.length === 1 ? 'item' : 'items'}`);
     },
 
     /**
@@ -466,6 +617,15 @@ const UIManager = {
         div.className = 'folder-item';
         div.title = `Open ${folderItem.name}`;
 
+        // Check if favorited
+        if (typeof FavoritesManager !== 'undefined' && FavoritesManager.isFavorited(folderItem)) {
+            div.classList.add('favorited');
+        }
+
+        // Add favorite button
+        const favoriteBtn = this.createFavoriteButton(folderItem, div);
+        div.appendChild(favoriteBtn);
+
         // Check if there's a .png preview for this folder
         if (folderItem.folderPreviewPath) {
             const preview = document.createElement('img');
@@ -488,11 +648,15 @@ const UIManager = {
         div.appendChild(name);
         div.appendChild(info);
 
-        div.addEventListener('click', () => {
+        div.addEventListener('click', (e) => {
+            // Don't open folder if clicking favorite button
+            if (e.target.closest('.favorite-btn')) return;
             this.openFolder(folderItem);
         });
 
-        div.addEventListener('dblclick', () => {
+        div.addEventListener('dblclick', (e) => {
+            // Don't open folder if clicking favorite button
+            if (e.target.closest('.favorite-btn')) return;
             this.openFolder(folderItem);
         });
 
@@ -506,6 +670,15 @@ const UIManager = {
         const div = document.createElement('div');
         div.className = 'file-item';
         div.title = fileItem.fileName;
+
+        // Check if favorited
+        if (typeof FavoritesManager !== 'undefined' && FavoritesManager.isFavorited(fileItem)) {
+            div.classList.add('favorited');
+        }
+
+        // Add favorite button
+        const favoriteBtn = this.createFavoriteButton(fileItem, div);
+        div.appendChild(favoriteBtn);
 
         // Make compositions draggable
         if (fileItem.type === 'aep-composition') {
@@ -575,7 +748,10 @@ const UIManager = {
         div.appendChild(name);
         div.appendChild(info);
 
-        div.addEventListener('click', () => {
+        div.addEventListener('click', (e) => {
+            // Don't open file if clicking favorite button
+            if (e.target.closest('.favorite-btn')) return;
+
             // For .aep files, open them as folders like regular folders
             if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
                 this.openAepAsFolder(fileItem);
@@ -585,7 +761,10 @@ const UIManager = {
             }
         });
 
-        div.addEventListener('dblclick', () => {
+        div.addEventListener('dblclick', (e) => {
+            // Don't open file if clicking favorite button
+            if (e.target.closest('.favorite-btn')) return;
+
             // For .aep files, already handled in click
             if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
                 return;
@@ -599,6 +778,61 @@ const UIManager = {
         });
 
         return div;
+    },
+
+    /**
+     * Create favorite button for item
+     */
+    createFavoriteButton: function(item, container) {
+        const btn = document.createElement('div');
+        btn.className = 'favorite-btn';
+        btn.title = 'Add to favorites';
+
+        const icon = document.createElement('span');
+        icon.className = 'star-icon';
+
+        // Check if item is favorited
+        if (typeof FavoritesManager !== 'undefined') {
+            const isFavorited = FavoritesManager.isFavorited(item);
+            icon.textContent = isFavorited ? '★' : '☆';
+            if (isFavorited) {
+                btn.classList.add('favorited');
+                btn.title = 'Remove from favorites';
+            }
+        } else {
+            icon.textContent = '☆';
+        }
+
+        btn.appendChild(icon);
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+
+            if (typeof FavoritesManager === 'undefined') {
+                this.showNotification('Favorites not available');
+                return;
+            }
+
+            const isFavorited = FavoritesManager.toggleFavorite(item);
+
+            // Update button state
+            if (isFavorited) {
+                icon.textContent = '★';
+                btn.classList.add('favorited');
+                btn.title = 'Remove from favorites';
+                container.classList.add('favorited');
+                this.showNotification('⭐ Added to favorites');
+            } else {
+                icon.textContent = '☆';
+                btn.classList.remove('favorited');
+                btn.title = 'Add to favorites';
+                container.classList.remove('favorited');
+                this.showNotification('Removed from favorites');
+            }
+        });
+
+        return btn;
     },
 
     /**

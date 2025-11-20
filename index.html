@@ -80,7 +80,7 @@
             <h1 class="gradient-title">FluxMotion</h1>
         </div>
 
-        <!-- Navigation Breadcrumbs -->
+        <!-- Navigation Bar -->
         <section class="navigation-section">
             <div class="breadcrumbs">
                 <button id="backBtn" class="btn btn-icon" title="Go back" disabled>
@@ -101,15 +101,36 @@
             </div>
         </section>
 
-        <!-- Folder/File Grid -->
-        <section class="content-section">
-            <div id="folderGrid" class="folder-grid">
-                <!-- Folders and files will be rendered here -->
-                <div class="empty-state">
-                    <div class="empty-state-icon">📁</div>
-                    <div class="empty-state-text">Click "Refresh" to load files from Projects folder</div>
+        <!-- Two Column Layout: Sidebar + Content -->
+        <section class="main-layout">
+            <!-- Left Sidebar: Folders Navigation -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3>Navigation</h3>
                 </div>
-            </div>
+                <div class="sidebar-menu">
+                    <div id="folderTree" class="folder-tree">
+                        <!-- Folder tree will be rendered here -->
+                    </div>
+                </div>
+                <div class="sidebar-footer">
+                    <div id="favoritesMenuItem" class="menu-item" title="Favorites">
+                        <span class="menu-icon">⭐</span>
+                        <span class="menu-text">Favorites</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Content Area: Files Grid -->
+            <main class="content-section">
+                <div id="folderGrid" class="folder-grid">
+                    <!-- Folders and files will be rendered here -->
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <div class="empty-state-text">Click "Refresh" to load files from Projects folder</div>
+                    </div>
+                </div>
+            </main>
         </section>
     </div>
 
@@ -119,6 +140,7 @@
     <!-- Scripts -->
     <script src="lib/CSInterface.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/favorites.js"></script>
     <script src="js/presets.js"></script>
     <script src="js/browser.js"></script>
     <script src="js/ui.js"></script>

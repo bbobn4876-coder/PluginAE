@@ -45,8 +45,9 @@ function openAEProject(filePath) {
             for (var i = itemCountBefore + 1; i <= app.project.numItems; i++) {
                 var item = app.project.item(i);
 
-                // Add any composition or footage to the active composition's timeline
-                if (item instanceof CompItem || item instanceof FootageItem) {
+                // Add only compositions to the active composition's timeline
+                // Do NOT add footage items (FootageItem) - those are just source files
+                if (item instanceof CompItem) {
                     try {
                         // Add to timeline at the top
                         var newLayer = activeComp.layers.add(item);

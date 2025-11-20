@@ -601,15 +601,8 @@ const UIManager = {
             return;
         }
 
-        // Process items: for .aep files, auto-expand and show compositions
+        // Render all items (folders and files, including .aep files)
         this.currentItems.forEach(item => {
-            // Skip .aep files - they will be auto-expanded to show compositions
-            if (item.type === 'file' && ['aep', 'pack'].includes(item.fileType?.toLowerCase())) {
-                // Auto-expand .aep file and show compositions inline
-                this.renderAepCompositions(item, grid);
-                return;
-            }
-
             const element = item.type === 'folder'
                 ? this.createFolderElement(item)
                 : this.createFileElement(item);

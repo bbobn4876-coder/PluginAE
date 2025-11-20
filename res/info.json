@@ -1,0 +1,11 @@
+{
+  "add-footage": "The tool helps you to place footage(images and videos) into placeholder compositions massively. There are 5 settings:<br>- \"Put footage\" [at the bottom][at the top]. places all footage from the \"Footage\" folder at the bottom(or top) of all layers in the timeline.<br>- \"Sequence\" [Forward][Backward][Random]. This setting allows to customize the sequence of adding footages.<br>- \"Fit\" [Fit][Crop] determines how footages will be positioned relative to project height or width.<br>- \"Guide layer\"[On][Off] adds or removes \"Guide layer\" attribute<br>- \"Mode\" allows to choose the way of working with the tool:[Manual][Auto]. [Manual] is a mode when you need to select placeholder compositions in order to add all footage from 'Footage' folder in the Project panel to these placeholders. With [Auto] mode you don't need to select placeholder compositions. Just click Ok.",
+  "text-replacer": "It allows you to change texts massively. Just click \"Parse\" to analyze all text layers in the active composition. Change text of each layer and hit \"Replace\" to apply your modification. if you need to change color or other settings of particular layer, click \"Setting\" button (setup process may vary from the pack).<br>It's possible to change font setting for all parsed texts or turn them off. Just tick the chekbox before applying changes.",
+  "puppeter": "The tool creates pins on an animation for its deformation. For example, it allows to flexibly change the path of the animation. Just drag a position controller to deform it. ",
+  "loop": "You can loop any layers in the active composition. ",
+  "remove-unused": "Removes all unused elements from the project",
+  "rgb-on": "If the project includes RGB-split(Chromatic Aberration) effect, you can turn on all of them in the active composion.",
+  "rgb-off": "If the project includes RGB-split(Chromatic Aberration) effect, you can turn off all of them in the active composion.",
+  "sfx-on": "If the project includes Sound FX files, you can turn on all of them in the active composion.",
+  "sfx-off": "If the project includes Sound FX files, you can turn off all of them in the active composion."
+}

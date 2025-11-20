@@ -219,6 +219,37 @@ window.AEInterface = {
         const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         const script = `importFileToTimeline("${escapedPath}")`;
         this.evalScript(script, callback);
+    },
+
+    /**
+     * Get contents of an .aep file (compositions, footage, folders)
+     */
+    getAepContents: function(filePath, callback) {
+        if (!filePath) {
+            console.error('No file path provided');
+            return;
+        }
+
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `getAepContents("${escapedPath}")`;
+        this.evalScript(script, callback);
+    },
+
+    /**
+     * Import specific composition from .aep file to timeline
+     */
+    importAepCompositionToTimeline: function(filePath, compName, callback) {
+        if (!filePath || !compName) {
+            console.error('File path and composition name required');
+            return;
+        }
+
+        // Escape backslashes and quotes for ExtendScript
+        const escapedPath = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const escapedCompName = compName.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        const script = `importAepCompositionToTimeline("${escapedPath}", "${escapedCompName}")`;
+        this.evalScript(script, callback);
     }
 };
 

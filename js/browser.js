@@ -4,10 +4,11 @@
  */
 
 const FileBrowser = {
-    currentPath: [],  // Stack of folder names
+    currentPath: [],  // Stack of folder names or {type: 'aep', name: 'file.aep', path: '/path/to/file.aep'}
     currentItems: [], // Current folder contents
     allItems: [],     // All items from root for global search
     selectedFile: null,
+    currentAepFile: null, // Currently opened .aep file object
 
     /**
      * Initialize the file browser
@@ -16,6 +17,7 @@ const FileBrowser = {
         this.currentPath = [];
         this.currentItems = [];
         this.selectedFile = null;
+        this.currentAepFile = null;
     },
 
     /**
@@ -232,16 +234,128 @@ const FileBrowser = {
     },
 
     /**
+     * Open .aep file as a folder (navigate into it)
+     */
+    openAepFile: function(fileItem, callback) {
+        if (!fileItem.filePath || !['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
+            if (callback) callback({ error: 'Not a valid .aep file' });
+            return;
+        }
+
+        // Get contents of .aep file
+        window.AEInterface.getAepContents(fileItem.filePath, (result) => {
+            try {
+                const contents = JSON.parse(result);
+
+                if (contents.error) {
+                    console.error('Error loading .aep contents:', contents.error);
+                    if (callback) callback({ error: contents.error });
+                    return;
+                }
+
+                // Store current .aep file info
+                this.currentAepFile = {
+                    name: fileItem.fileName,
+                    path: fileItem.filePath,
+                    fileItem: fileItem
+                };
+
+                // Convert compositions and footage to file items
+                const items = [];
+
+                // Add compositions
+                if (contents.compositions && contents.compositions.length > 0) {
+                    contents.compositions.forEach(comp => {
+                        items.push({
+                            type: 'aep-composition',
+                            name: comp.name,
+                            fileName: comp.name,
+                            fileType: 'composition',
+                            aepPath: fileItem.filePath,
+                            compositionName: comp.name,
+                            info: {
+                                width: comp.width,
+                                height: comp.height,
+                                duration: comp.duration,
+                                frameRate: comp.frameRate,
+                                numLayers: comp.numLayers
+                            }
+                        });
+                    });
+                }
+
+                // Add footage items
+                if (contents.footage && contents.footage.length > 0) {
+                    contents.footage.forEach(footage => {
+                        items.push({
+                            type: 'aep-footage',
+                            name: footage.name,
+                            fileName: footage.name,
+                            fileType: 'footage',
+                            aepPath: fileItem.filePath,
+                            footageName: footage.name,
+                            info: {
+                                width: footage.width,
+                                height: footage.height,
+                                duration: footage.duration
+                            }
+                        });
+                    });
+                }
+
+                // Update path (add .aep file as a "folder" in path)
+                this.currentPath.push({
+                    type: 'aep',
+                    name: fileItem.fileName,
+                    path: fileItem.filePath
+                });
+
+                // Set current items
+                this.currentItems = items;
+
+                if (callback) callback({
+                    success: true,
+                    items: items,
+                    path: this.getCurrentPathString()
+                });
+
+            } catch (e) {
+                console.error('Error parsing .aep contents:', e);
+                if (callback) callback({ error: 'Failed to parse .aep contents' });
+            }
+        });
+    },
+
+    /**
+     * Get current path as a string
+     */
+    getCurrentPathString: function() {
+        return this.currentPath.map(item => {
+            if (typeof item === 'string') {
+                return item;
+            } else if (item.type === 'aep') {
+                return item.name;
+            }
+            return item;
+        }).join('/');
+    },
+
+    /**
      * Navigate back to parent folder
      */
     navigateBack: function() {
         if (this.currentPath.length === 0) return null;
 
-        this.currentPath.pop();
+        const lastItem = this.currentPath.pop();
+
+        // If we're exiting an .aep file, clear the current aep file
+        if (typeof lastItem === 'object' && lastItem.type === 'aep') {
+            this.currentAepFile = null;
+        }
 
         // Need to reload from root and navigate to current path
         return {
-            path: this.currentPath.join('/'),
+            path: this.getCurrentPathString(),
             reload: true
         };
     },
@@ -263,10 +377,12 @@ const FileBrowser = {
     getBreadcrumbs: function() {
         const crumbs = [{ name: 'Projects', path: [] }];
 
-        this.currentPath.forEach((folder, index) => {
+        this.currentPath.forEach((item, index) => {
+            const name = typeof item === 'string' ? item : item.name;
             crumbs.push({
-                name: folder,
-                path: this.currentPath.slice(0, index + 1)
+                name: name,
+                path: this.currentPath.slice(0, index + 1),
+                isAep: typeof item === 'object' && item.type === 'aep'
             });
         });
 
@@ -281,6 +397,10 @@ const FileBrowser = {
             // Project files
             'pack': '📦',
             'aep': '📦',
+
+            // After Effects items
+            'composition': '🎬',
+            'footage': '🎞️',
 
             // Scripts
             'jsx': '📜',

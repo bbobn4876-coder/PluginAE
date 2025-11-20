@@ -743,3 +743,212 @@ function renderPreview(compName, outputPath) {
         return "Error: " + e.toString();
     }
 }
+
+/**
+ * Get contents of an .aep file (list of compositions and footage items)
+ * @param {string} filePath - Full path to the .aep file
+ * @return {string} JSON string with contents
+ */
+function getAepContents(filePath) {
+    try {
+        var projectFile = new File(filePath);
+
+        if (!projectFile.exists) {
+            return JSON.stringify({
+                error: "File not found"
+            });
+        }
+
+        if (!filePath.match(/\.(aep|pack)$/i)) {
+            return JSON.stringify({
+                error: "Not a valid project file"
+            });
+        }
+
+        // Save current project state
+        var currentProject = app.project.file;
+        var currentProjectPath = currentProject ? currentProject.fsName : null;
+
+        try {
+            // Close current project without saving
+            if (currentProject !== null) {
+                app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
+            }
+
+            // Open the target project
+            app.open(projectFile);
+
+            var contents = {
+                compositions: [],
+                footage: [],
+                folders: []
+            };
+
+            // Collect all items
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+
+                if (item instanceof CompItem) {
+                    contents.compositions.push({
+                        id: item.id,
+                        name: item.name,
+                        width: item.width,
+                        height: item.height,
+                        duration: Math.round(item.duration * 100) / 100,
+                        frameRate: item.frameRate,
+                        numLayers: item.numLayers
+                    });
+                } else if (item instanceof FootageItem) {
+                    contents.footage.push({
+                        id: item.id,
+                        name: item.name,
+                        width: item.width || 0,
+                        height: item.height || 0,
+                        duration: item.duration || 0
+                    });
+                } else if (item instanceof FolderItem) {
+                    contents.folders.push({
+                        id: item.id,
+                        name: item.name
+                    });
+                }
+            }
+
+            // Close the analyzed project
+            app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES);
+
+            // Reopen previous project if there was one
+            if (currentProjectPath !== null) {
+                app.open(new File(currentProjectPath));
+            }
+
+            return JSON.stringify(contents);
+
+        } catch (innerError) {
+            // Try to restore previous project even if error occurred
+            if (currentProjectPath !== null) {
+                try {
+                    app.open(new File(currentProjectPath));
+                } catch (e) {
+                    // Ignore restoration errors
+                }
+            }
+            throw innerError;
+        }
+
+    } catch (e) {
+        return JSON.stringify({
+            error: e.toString()
+        });
+    }
+}
+
+/**
+ * Import specific composition from an .aep file to timeline
+ * @param {string} filePath - Full path to the .aep file
+ * @param {string} compName - Name of the composition to import
+ * @return {string} "true" on success, error message on failure
+ */
+function importAepCompositionToTimeline(filePath, compName) {
+    try {
+        var projectFile = new File(filePath);
+
+        if (!projectFile.exists) {
+            return "Error: File not found - " + filePath;
+        }
+
+        if (!filePath.match(/\.(aep|pack)$/i)) {
+            return "Error: Not a valid project file (must be .aep or .pack)";
+        }
+
+        // Check if there's an active composition
+        var activeComp = app.project.activeItem;
+        if (!(activeComp instanceof CompItem)) {
+            return "Error: No active composition. Please create or open a composition first.";
+        }
+
+        // Remember IDs of all existing items before import
+        var existingItemIds = {};
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+            if (item) {
+                existingItemIds[item.id] = true;
+            }
+        }
+
+        // Import the project file into current project
+        var importOptions = new ImportOptions(projectFile);
+
+        if (importOptions.canImportAs(ImportAsType.PROJECT)) {
+            app.project.importFile(importOptions);
+
+            // Find or create "Projects" folder
+            var projectsFolder = null;
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+                if (item instanceof FolderItem && item.name === "Projects") {
+                    projectsFolder = item;
+                    break;
+                }
+            }
+
+            if (!projectsFolder) {
+                projectsFolder = app.project.items.addFolder("Projects");
+            }
+
+            // Get .aep file name without extension
+            var fileName = projectFile.name.replace(/\.(aep|pack)$/i, '');
+
+            // Create subfolder for this .aep file
+            var aepFolder = app.project.items.addFolder(fileName);
+            aepFolder.parentFolder = projectsFolder;
+
+            // Find the specific composition and all new items
+            var targetComp = null;
+            var newItems = [];
+
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+
+                if (item && !existingItemIds[item.id]) {
+                    // Skip the folders we just created
+                    if (item === projectsFolder || item === aepFolder) {
+                        continue;
+                    }
+
+                    newItems.push(item);
+
+                    // Check if this is the composition we're looking for
+                    if (item instanceof CompItem && item.name === compName) {
+                        targetComp = item;
+                    }
+                }
+            }
+
+            // Move all new items to the .aep folder
+            for (var j = 0; j < newItems.length; j++) {
+                newItems[j].parentFolder = aepFolder;
+            }
+
+            // Add the specific composition to timeline
+            if (targetComp) {
+                try {
+                    var newLayer = activeComp.layers.add(targetComp);
+                    newLayer.startTime = activeComp.time;
+                    newLayer.inPoint = activeComp.time;
+                    newLayer.outPoint = activeComp.time + targetComp.duration;
+                    return "true";
+                } catch (addError) {
+                    return "Error: Failed to add composition to timeline - " + addError.toString();
+                }
+            } else {
+                return "Error: Composition '" + compName + "' not found in project file";
+            }
+        } else {
+            return "Error: Cannot import this project file";
+        }
+
+    } catch (e) {
+        return "Error: " + e.toString();
+    }
+}

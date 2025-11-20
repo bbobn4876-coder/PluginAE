@@ -481,7 +481,15 @@ const UIManager = {
 
         const info = document.createElement('div');
         info.className = 'item-info';
-        info.textContent = FileBrowser.formatFileSize(fileItem.fileSize);
+
+        // Show appropriate info based on file type
+        if (fileItem.type === 'aep-composition' && fileItem.info) {
+            info.textContent = `${fileItem.info.width}x${fileItem.info.height} • ${fileItem.info.duration}s`;
+        } else if (fileItem.type === 'aep-footage' && fileItem.info) {
+            info.textContent = `${fileItem.info.width}x${fileItem.info.height}`;
+        } else {
+            info.textContent = FileBrowser.formatFileSize(fileItem.fileSize);
+        }
 
         div.appendChild(icon);
         div.appendChild(name);
@@ -492,7 +500,16 @@ const UIManager = {
         });
 
         div.addEventListener('dblclick', () => {
-            this.openInAfterEffects(fileItem);
+            // For .aep files, open them as folders
+            if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
+                this.openAepAsFolder(fileItem);
+            } else if (fileItem.type === 'aep-composition') {
+                // For compositions inside .aep files, import to timeline
+                this.importCompositionToTimeline(fileItem);
+            } else {
+                // For other files, use normal handling
+                this.openInAfterEffects(fileItem);
+            }
         });
 
         return div;
@@ -510,6 +527,54 @@ const UIManager = {
             this.updateBreadcrumbs();
             this.clearPreview();
         }
+    },
+
+    /**
+     * Open .aep file as a folder
+     */
+    openAepAsFolder: function(fileItem) {
+        this.showNotification('Opening ' + fileItem.fileName + '...');
+
+        FileBrowser.openAepFile(fileItem, (result) => {
+            if (result.error) {
+                this.showNotification('✗ Error: ' + result.error);
+                return;
+            }
+
+            this.currentItems = result.items;
+            this.renderFolderGrid();
+            this.updateBreadcrumbs();
+            this.clearPreview();
+
+            const count = result.items.length;
+            this.showNotification(`✓ Opened ${fileItem.fileName} (${count} ${count === 1 ? 'item' : 'items'})`);
+        });
+    },
+
+    /**
+     * Import composition from .aep file to timeline
+     */
+    importCompositionToTimeline: function(compositionItem) {
+        if (!compositionItem.aepPath || !compositionItem.compositionName) {
+            this.showNotification('✗ Invalid composition item');
+            return;
+        }
+
+        this.showNotification('Importing ' + compositionItem.compositionName + ' to timeline...');
+
+        window.AEInterface.importAepCompositionToTimeline(
+            compositionItem.aepPath,
+            compositionItem.compositionName,
+            (result) => {
+                if (result === 'true') {
+                    this.showNotification('✓ Composition added to timeline!');
+                } else if (result.includes('Error')) {
+                    this.showNotification('✗ ' + result);
+                } else {
+                    this.showNotification('✓ ' + result);
+                }
+            }
+        );
     },
 
     /**
@@ -786,18 +851,6 @@ const UIManager = {
                     }
                 } else {
                     this.showNotification('✓ JSX executed');
-                }
-            });
-        } else if (ext === 'pack' || ext === 'aep') {
-            // Import project file into current project
-            this.showNotification('Importing project into current After Effects project...');
-            window.AEInterface.openProject(fileItem.filePath, (result) => {
-                if (result === 'true') {
-                    this.showNotification('✓ Project imported successfully!');
-                } else if (result.includes('Error')) {
-                    this.showNotification('✗ ' + result);
-                } else {
-                    this.showNotification('✓ Imported: ' + result);
                 }
             });
         } else if (ext === 'prst' || ext === 'ffx') {

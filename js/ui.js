@@ -13,6 +13,36 @@ const UIManager = {
     animationId: null,
 
     /**
+     * Decode file name from URL encoding
+     */
+    decodeFileName: function(name) {
+        if (!name) return name;
+        try {
+            // First, try to decode URI component
+            return decodeURIComponent(name);
+        } catch (e) {
+            // If that fails, try to manually replace common encodings
+            return name
+                .replace(/%20/g, ' ')
+                .replace(/%21/g, '!')
+                .replace(/%23/g, '#')
+                .replace(/%24/g, '$')
+                .replace(/%26/g, '&')
+                .replace(/%27/g, "'")
+                .replace(/%28/g, '(')
+                .replace(/%29/g, ')')
+                .replace(/%2B/g, '+')
+                .replace(/%2C/g, ',')
+                .replace(/%2D/g, '-')
+                .replace(/%2E/g, '.')
+                .replace(/%3D/g, '=')
+                .replace(/%40/g, '@')
+                .replace(/%5B/g, '[')
+                .replace(/%5D/g, ']');
+        }
+    },
+
+    /**
      * Initialize UI elements
      */
     init: function() {
@@ -26,6 +56,13 @@ const UIManager = {
             audioPlayerContainer: document.getElementById('audioPlayerContainer'),
             audioPlayer: document.getElementById('audioPlayer'),
             audioWaveform: document.getElementById('audioWaveform'),
+            playPauseBtn: document.getElementById('playPauseBtn'),
+            currentTime: document.getElementById('currentTime'),
+            duration: document.getElementById('duration'),
+            progressBar: document.getElementById('progressBar'),
+            progressFill: document.getElementById('progressFill'),
+            progressHandle: document.getElementById('progressHandle'),
+            muteBtn: document.getElementById('muteBtn'),
             volumeSlider: document.getElementById('volumeSlider'),
             volumeValue: document.getElementById('volumeValue'),
             currentFileName: document.getElementById('currentFileName'),
@@ -66,31 +103,177 @@ const UIManager = {
      */
     setupAudioPlayer: function() {
         const audioPlayer = this.elements.audioPlayer;
+        const playPauseBtn = this.elements.playPauseBtn;
+        const muteBtn = this.elements.muteBtn;
         const volumeSlider = this.elements.volumeSlider;
         const volumeValue = this.elements.volumeValue;
+        const progressBar = this.elements.progressBar;
 
         // Set initial volume to 50%
         audioPlayer.volume = 0.5;
+
+        // Play/Pause button
+        playPauseBtn.addEventListener('click', () => {
+            this.togglePlayPause();
+        });
+
+        // Mute button
+        muteBtn.addEventListener('click', () => {
+            this.toggleMute();
+        });
 
         // Volume slider event
         volumeSlider.addEventListener('input', (e) => {
             const volume = e.target.value / 100;
             audioPlayer.volume = volume;
             volumeValue.textContent = e.target.value + '%';
+            this.updateVolumeIcon(volume);
+        });
+
+        // Progress bar click
+        progressBar.addEventListener('click', (e) => {
+            this.seekAudio(e);
+        });
+
+        // Progress bar drag
+        let isDragging = false;
+        progressBar.addEventListener('mousedown', () => {
+            isDragging = true;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                this.seekAudio(e);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Audio time update
+        audioPlayer.addEventListener('timeupdate', () => {
+            this.updateProgress();
+        });
+
+        // Audio metadata loaded
+        audioPlayer.addEventListener('loadedmetadata', () => {
+            this.updateDuration();
+        });
+
+        // Audio ended
+        audioPlayer.addEventListener('ended', () => {
+            this.updatePlayPauseButton(false);
         });
 
         // Initialize audio visualization when playing
         audioPlayer.addEventListener('play', () => {
+            this.updatePlayPauseButton(true);
             this.initAudioVisualization();
         });
 
         // Stop visualization when paused
         audioPlayer.addEventListener('pause', () => {
+            this.updatePlayPauseButton(false);
             if (this.animationId) {
                 cancelAnimationFrame(this.animationId);
                 this.animationId = null;
             }
         });
+    },
+
+    /**
+     * Toggle play/pause
+     */
+    togglePlayPause: function() {
+        const audioPlayer = this.elements.audioPlayer;
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+        } else {
+            audioPlayer.pause();
+        }
+    },
+
+    /**
+     * Update play/pause button
+     */
+    updatePlayPauseButton: function(isPlaying) {
+        const playPauseBtn = this.elements.playPauseBtn;
+        playPauseBtn.innerHTML = isPlaying
+            ? '<span class="pause-icon">⏸</span>'
+            : '<span class="play-icon">▶</span>';
+    },
+
+    /**
+     * Toggle mute
+     */
+    toggleMute: function() {
+        const audioPlayer = this.elements.audioPlayer;
+        audioPlayer.muted = !audioPlayer.muted;
+        this.updateVolumeIcon(audioPlayer.muted ? 0 : audioPlayer.volume);
+    },
+
+    /**
+     * Update volume icon
+     */
+    updateVolumeIcon: function(volume) {
+        const muteBtn = this.elements.muteBtn;
+        const icon = muteBtn.querySelector('.volume-icon');
+
+        if (volume === 0) {
+            icon.textContent = '🔇';
+        } else if (volume < 0.5) {
+            icon.textContent = '🔉';
+        } else {
+            icon.textContent = '🔊';
+        }
+    },
+
+    /**
+     * Seek audio
+     */
+    seekAudio: function(e) {
+        const progressBar = this.elements.progressBar;
+        const audioPlayer = this.elements.audioPlayer;
+        const rect = progressBar.getBoundingClientRect();
+        const percent = (e.clientX - rect.left) / rect.width;
+        audioPlayer.currentTime = percent * audioPlayer.duration;
+    },
+
+    /**
+     * Update progress bar
+     */
+    updateProgress: function() {
+        const audioPlayer = this.elements.audioPlayer;
+        const progressFill = this.elements.progressFill;
+        const progressHandle = this.elements.progressHandle;
+        const currentTime = this.elements.currentTime;
+
+        if (audioPlayer.duration) {
+            const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progressFill.style.width = percent + '%';
+            progressHandle.style.left = percent + '%';
+            currentTime.textContent = this.formatTime(audioPlayer.currentTime);
+        }
+    },
+
+    /**
+     * Update duration display
+     */
+    updateDuration: function() {
+        const audioPlayer = this.elements.audioPlayer;
+        const duration = this.elements.duration;
+        duration.textContent = this.formatTime(audioPlayer.duration);
+    },
+
+    /**
+     * Format time in mm:ss
+     */
+    formatTime: function(seconds) {
+        if (isNaN(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return mins + ':' + (secs < 10 ? '0' : '') + secs;
     },
 
     /**
@@ -253,7 +436,7 @@ const UIManager = {
         const name = document.createElement('div');
         name.className = 'item-name';
         // Decode URL encoding (e.g., %20 for spaces)
-        name.textContent = decodeURIComponent(folderItem.name);
+        name.textContent = this.decodeFileName(folderItem.name);
 
         const info = document.createElement('div');
         info.className = 'item-info';
@@ -289,7 +472,7 @@ const UIManager = {
         const name = document.createElement('div');
         name.className = 'item-name';
         // Decode URL encoding (e.g., %20 for spaces)
-        name.textContent = decodeURIComponent(fileItem.name);
+        name.textContent = this.decodeFileName(fileItem.name);
 
         const info = document.createElement('div');
         info.className = 'item-info';
@@ -399,7 +582,7 @@ const UIManager = {
         this.showPreview(fileItem);
 
         // Update file name display
-        this.elements.currentFileName.textContent = fileItem.fileName;
+        this.elements.currentFileName.textContent = this.decodeFileName(fileItem.fileName);
     },
 
     /**
@@ -454,6 +637,13 @@ const UIManager = {
             // Audio preview
             audioPlayer.src = 'file:///' + fileItem.filePath.replace(/\\/g, '/');
             audioPlayerContainer.classList.remove('hidden');
+
+            // Auto-play audio when loaded
+            audioPlayer.addEventListener('loadeddata', () => {
+                audioPlayer.play().catch(err => {
+                    console.log('Auto-play prevented:', err);
+                });
+            }, { once: true });
         } else {
             // Show placeholder for non-previewable files
             placeholder.classList.remove('hidden');
@@ -461,7 +651,7 @@ const UIManager = {
             const textElem = placeholder.querySelector('.placeholder-text');
 
             iconElem.textContent = FileBrowser.getFileIcon(ext);
-            textElem.textContent = fileItem.fileName;
+            textElem.textContent = this.decodeFileName(fileItem.fileName);
         }
     },
 

@@ -39,11 +39,29 @@
                 <div id="audioPlayerContainer" class="audio-player-container hidden">
                     <div class="audio-player-wrapper">
                         <canvas id="audioWaveform" class="audio-waveform"></canvas>
-                        <audio id="audioPlayer" class="audio-player" controls></audio>
-                        <div class="volume-control">
-                            <span class="volume-icon">🔊</span>
-                            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
-                            <span id="volumeValue" class="volume-value">50%</span>
+                        <audio id="audioPlayer" class="audio-player"></audio>
+                        <div class="audio-controls">
+                            <button id="playPauseBtn" class="audio-btn play-pause-btn">
+                                <span class="play-icon">▶</span>
+                            </button>
+                            <div class="time-display">
+                                <span id="currentTime" class="time-current">0:00</span>
+                                <span class="time-separator">/</span>
+                                <span id="duration" class="time-duration">0:00</span>
+                            </div>
+                            <div class="progress-container">
+                                <div id="progressBar" class="progress-bar">
+                                    <div id="progressFill" class="progress-fill"></div>
+                                    <div id="progressHandle" class="progress-handle"></div>
+                                </div>
+                            </div>
+                            <div class="volume-control">
+                                <button id="muteBtn" class="audio-btn volume-btn">
+                                    <span class="volume-icon">🔊</span>
+                                </button>
+                                <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
+                                <span id="volumeValue" class="volume-value">50%</span>
+                            </div>
                         </div>
                     </div>
                 </div>

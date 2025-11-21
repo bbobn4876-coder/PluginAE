@@ -86,15 +86,15 @@ const FileBrowser = {
     },
 
     /**
-     * Organize files into folder structure
+     * Organize files into folder structure with nested subfolders
      */
     organizeFolderStructure: function(files, folders) {
         const items = [];
         const folderMap = new Map();
 
         // First pass: collect all preview files
-        const videoPreviewFiles = new Map(); // .mp4, .gif, .mov for .aep previews
-        const pngFiles = new Map(); // .png files for folder previews
+        const videoPreviewFiles = new Map(); // .mp4, .gif, .mov for .aep/.jsx/.prst previews
+        const pngFiles = new Map(); // .png files for folder/.jsx/.prst previews
 
         if (files && Array.isArray(files)) {
             files.forEach(file => {
@@ -123,45 +123,43 @@ const FileBrowser = {
                     }
                 }
 
-                // Collect .png files for folder previews
+                // Collect .png files for folder/.jsx/.prst previews
                 if (fileType === 'png') {
                     const baseName = file.name.replace(/\.png$/i, '');
                     const folderPath = file.folder || '';
-                    const key = folderPath + '/' + baseName;
-                    pngFiles.set(key, file.path);
+                    const key1 = folderPath + '/' + baseName;
+                    const key2 = baseName; // Also try without folder path
+                    pngFiles.set(key1, file.path);
+                    pngFiles.set(key2, file.path);
                 }
             });
         }
 
-        // Process folders
+        // Process folders - create hierarchical structure
         if (folders && Array.isArray(folders)) {
             folders.forEach(folder => {
                 const pathParts = folder.path.split('/').filter(p => p);
                 const depth = pathParts.length;
 
-                // Only show top-level folders
-                if (depth === 1) {
-                    // Check if there's a .png file with the same name as this folder
-                    // PNG files in root with folder name should match
-                    const folderPreviewKey = '/' + folder.name;
-                    let folderPreviewPath = pngFiles.get(folderPreviewKey) || null;
+                // Check if there's a .png file with the same name as this folder
+                const folderPreviewKey1 = '/' + folder.name;
+                const folderPreviewKey2 = folder.name + '/' + folder.name;
+                const folderPreviewKey3 = folder.path + '/' + folder.name;
+                let folderPreviewPath = pngFiles.get(folderPreviewKey1) ||
+                                       pngFiles.get(folderPreviewKey2) ||
+                                       pngFiles.get(folderPreviewKey3) || null;
 
-                    // Also check for PNG files inside the folder with the same name
-                    if (!folderPreviewPath) {
-                        const folderInternalKey = folder.name + '/' + folder.name;
-                        folderPreviewPath = pngFiles.get(folderInternalKey) || null;
-                    }
+                const folderObj = {
+                    type: 'folder',
+                    name: this.decodeFileName(folder.name),
+                    path: folder.path,
+                    fullPath: folder.fullPath || folder.path,
+                    files: [],
+                    info: folder.info || null,
+                    folderPreviewPath: folderPreviewPath
+                };
 
-                    folderMap.set(folder.name, {
-                        type: 'folder',
-                        name: this.decodeFileName(folder.name),
-                        path: folder.path,
-                        fullPath: folder.fullPath || folder.path,
-                        files: [],
-                        info: folder.info || null,
-                        folderPreviewPath: folderPreviewPath
-                    });
-                }
+                folderMap.set(folder.path, folderObj);
             });
         }
 
@@ -180,31 +178,42 @@ const FileBrowser = {
                 }
 
                 const folderPath = file.folder || '';
-                const topLevelFolder = folderPath.split('/')[0];
 
-                // Check if there's a matching video preview file (.gif, .mp4 or .mov) for .aep files
+                // Check for preview files for .aep, .jsx, and .prst files
                 let videoPreviewPath = null;
-                if (fileType === 'aep' || fileType === 'pack') {
-                    const baseName = file.name.replace(/\.(aep|pack)$/i, '');
-                    const folderPath = file.folder || '';
+                if (fileType === 'aep' || fileType === 'pack' || fileType === 'jsx' || fileType === 'prst') {
+                    const baseName = file.name.replace(/\.(aep|pack|jsx|prst)$/i, '');
 
                     // Try multiple keys to find preview
                     const possibleKeys = [
                         folderPath + '/' + baseName, // Same folder, same name
                         baseName, // Just the name
-                        folderPath + '/' + file.name.replace(/\.(aep|pack)$/i, '') // Without folder prefix
                     ];
 
-                    for (const key of possibleKeys) {
-                        if (videoPreviewFiles.has(key)) {
-                            videoPreviewPath = videoPreviewFiles.get(key).path;
-                            console.log('Found preview for', file.name, ':', videoPreviewPath);
-                            break;
+                    // For .aep and .pack, prefer video files (.gif, .mp4, .mov)
+                    if (fileType === 'aep' || fileType === 'pack') {
+                        for (const key of possibleKeys) {
+                            if (videoPreviewFiles.has(key)) {
+                                videoPreviewPath = videoPreviewFiles.get(key).path;
+                                break;
+                            }
                         }
                     }
 
-                    if (!videoPreviewPath) {
-                        console.log('No preview found for', file.name, 'tried keys:', possibleKeys);
+                    // For .jsx and .prst, prefer .png or .gif files
+                    if (fileType === 'jsx' || fileType === 'prst') {
+                        for (const key of possibleKeys) {
+                            // First try .png files
+                            if (pngFiles.has(key)) {
+                                videoPreviewPath = pngFiles.get(key);
+                                break;
+                            }
+                            // Then try .gif files
+                            if (videoPreviewFiles.has(key)) {
+                                videoPreviewPath = videoPreviewFiles.get(key).path;
+                                break;
+                            }
+                        }
                     }
                 }
 
@@ -220,20 +229,53 @@ const FileBrowser = {
                     videoPreviewPath: videoPreviewPath
                 };
 
-                if (topLevelFolder && folderMap.has(topLevelFolder)) {
-                    // File belongs to a folder
-                    folderMap.get(topLevelFolder).files.push(fileObj);
-                } else if (!folderPath) {
+                // Add file to appropriate folder or root
+                if (folderPath) {
+                    // File belongs to a folder - add to the folder
+                    const folder = folderMap.get(folderPath);
+                    if (folder) {
+                        folder.files.push(fileObj);
+                    } else {
+                        // Folder not found, might be nested - try to find parent
+                        let found = false;
+                        for (let [path, folderObj] of folderMap) {
+                            if (folderPath.startsWith(path + '/')) {
+                                folderObj.files.push(fileObj);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            // Add to root if no folder found
+                            items.push(fileObj);
+                        }
+                    }
+                } else {
                     // File is in root of FluxMotion folder
                     items.push(fileObj);
                 }
             });
         }
 
-        // Convert folder map to array
-        folderMap.forEach(folder => {
-            items.push(folder);
+        // Build hierarchical folder structure
+        const rootFolders = [];
+        folderMap.forEach((folder, path) => {
+            const pathParts = path.split('/').filter(p => p);
+            if (pathParts.length === 1) {
+                // Top-level folder
+                rootFolders.push(folder);
+            } else {
+                // Nested folder - find parent
+                const parentPath = pathParts.slice(0, -1).join('/');
+                const parent = folderMap.get(parentPath);
+                if (parent) {
+                    parent.files.push(folder);
+                }
+            }
         });
+
+        // Add root folders to items
+        items.push(...rootFolders);
 
         return items.sort((a, b) => {
             // Folders first, then files

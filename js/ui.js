@@ -514,20 +514,24 @@ const UIManager = {
     createFolderTreeItem: function(folder) {
         const container = document.createElement('div');
         container.className = 'folder-tree-item';
+        container.dataset.folderName = folder.name;
+        container.dataset.folderPath = folder.path || folder.name;
 
         const header = document.createElement('div');
         header.className = 'folder-tree-header';
 
-        // Check if folder has files
+        // Check if folder has files or subfolders
+        const subfolders = folder.files ? folder.files.filter(f => f.type === 'folder') : [];
+        const hasSubfolders = subfolders.length > 0;
         const hasFiles = folder.files && folder.files.length > 0;
 
-        if (hasFiles) {
+        if (hasSubfolders) {
             const expandIcon = document.createElement('span');
             expandIcon.className = 'folder-expand-icon';
             expandIcon.textContent = '▶';
             header.appendChild(expandIcon);
         } else {
-            // Add spacer if no files
+            // Add spacer if no subfolders
             const spacer = document.createElement('span');
             spacer.style.width = '16px';
             header.appendChild(spacer);
@@ -546,10 +550,18 @@ const UIManager = {
 
         container.appendChild(header);
 
+        // Store folder reference for later use
+        container.folderData = folder;
+
         // Add click handler to open folder
         header.addEventListener('click', (e) => {
-            if (hasFiles) {
-                // Toggle expand/collapse
+            e.stopPropagation();
+
+            // Close all other folders at the same level
+            this.closeOtherFolders(container);
+
+            if (hasSubfolders) {
+                // Toggle expand/collapse of submenu
                 const isExpanded = header.classList.contains('expanded');
                 header.classList.toggle('expanded');
 
@@ -557,36 +569,72 @@ const UIManager = {
                 if (children) {
                     children.classList.toggle('expanded');
                 }
-
-                // If collapsing, show placeholder in right panel
-                if (isExpanded) {
-                    this.showFolderCollapsedPlaceholder();
-                    return;
-                }
             }
 
-            // Also open folder in main view
+            // Highlight this folder as active
+            this.highlightActiveFolder(container);
+
+            // Open folder in main view
             this.openFolder(folder);
         });
 
-        // Create children container if folder has files
-        if (hasFiles) {
+        // Create children container if folder has subfolders
+        if (hasSubfolders) {
             const children = document.createElement('div');
             children.className = 'folder-tree-children';
 
-            // Add files as simple items (no expand)
-            folder.files.forEach(file => {
-                if (file.type === 'folder') {
-                    // Recursive for subfolders
-                    const subItem = this.createFolderTreeItem(file);
-                    children.appendChild(subItem);
-                }
+            // Add subfolders to submenu
+            subfolders.forEach(subfolder => {
+                const subItem = this.createFolderTreeItem(subfolder);
+                children.appendChild(subItem);
             });
 
             container.appendChild(children);
         }
 
         return container;
+    },
+
+    /**
+     * Close all other folders except the current one
+     */
+    closeOtherFolders: function(currentContainer) {
+        // Get parent container
+        const parent = currentContainer.parentElement;
+        if (!parent) return;
+
+        // Close all siblings
+        const siblings = parent.querySelectorAll(':scope > .folder-tree-item');
+        siblings.forEach(sibling => {
+            if (sibling !== currentContainer) {
+                const header = sibling.querySelector('.folder-tree-header');
+                const children = sibling.querySelector('.folder-tree-children');
+
+                if (header && header.classList.contains('expanded')) {
+                    header.classList.remove('expanded');
+                }
+                if (children && children.classList.contains('expanded')) {
+                    children.classList.remove('expanded');
+                }
+            }
+        });
+    },
+
+    /**
+     * Highlight active folder in the tree
+     */
+    highlightActiveFolder: function(container) {
+        // Remove active class from all folders
+        const allHeaders = document.querySelectorAll('.folder-tree-header');
+        allHeaders.forEach(header => {
+            header.classList.remove('active');
+        });
+
+        // Add active class to current folder
+        const header = container.querySelector('.folder-tree-header');
+        if (header) {
+            header.classList.add('active');
+        }
     },
 
     /**
@@ -851,8 +899,8 @@ const UIManager = {
                 // For compositions inside .aep files, import to timeline
                 this.importCompositionToTimeline(fileItem);
             } else if (fileItem.fileType?.toLowerCase() === 'jsx') {
-                // For .jsx files, import to project
-                this.importJsxToProject(fileItem);
+                // For .jsx files, execute and add to timeline (like .aep)
+                this.executeJsxToTimeline(fileItem);
             } else {
                 // For other files, use normal handling
                 this.openInAfterEffects(fileItem);
@@ -1015,6 +1063,32 @@ const UIManager = {
         window.AEInterface.importFile(fileItem.filePath, (result) => {
             if (result === 'true' || result.includes('imported')) {
                 this.showNotification('✓ JSX file imported to project!');
+            } else if (result.includes('Error') || result.includes('error')) {
+                this.showNotification('✗ ' + result);
+            } else {
+                this.showNotification('✓ ' + result);
+            }
+        });
+    },
+
+    /**
+     * Execute .jsx file and add created items to timeline (like .aep behavior)
+     */
+    executeJsxToTimeline: function(fileItem) {
+        if (!fileItem.filePath) {
+            this.showNotification('✗ Invalid file path');
+            return;
+        }
+
+        if (!window.AEInterface) {
+            this.showNotification('After Effects integration not available');
+            return;
+        }
+
+        this.showNotification('Executing JSX script and adding to timeline...');
+        window.AEInterface.executeJSX(fileItem.filePath, (result) => {
+            if (result === 'true' || (!result.includes('Error') && !result.includes('error'))) {
+                this.showNotification('✓ JSX executed and added to timeline!');
             } else if (result.includes('Error') || result.includes('error')) {
                 this.showNotification('✗ ' + result);
             } else {
@@ -1196,15 +1270,19 @@ const UIManager = {
 
         const ext = fileItem.fileType?.toLowerCase();
 
-        // Check for video/gif preview for .aep files
-        if (['aep', 'pack'].includes(ext)) {
+        // Check for video/gif preview for .aep, .jsx, and .prst files
+        if (['aep', 'pack', 'jsx', 'prst'].includes(ext)) {
             // First check if there's a video preview path
             if (fileItem.videoPreviewPath) {
-                // Determine if it's a .gif or video file
+                // Determine if it's a .gif, .png or video file
                 const previewExt = fileItem.videoPreviewPath.split('.').pop().toLowerCase();
 
                 if (previewExt === 'gif') {
                     // Show .gif as image preview with autoplay
+                    imagePreview.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
+                    imagePreview.classList.remove('hidden');
+                } else if (previewExt === 'png') {
+                    // Show .png as image preview
                     imagePreview.src = 'file:///' + fileItem.videoPreviewPath.replace(/\\/g, '/');
                     imagePreview.classList.remove('hidden');
                 } else if (['mp4', 'mov', 'webm'].includes(previewExt)) {

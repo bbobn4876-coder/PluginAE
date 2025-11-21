@@ -584,42 +584,26 @@ body {
     flex: 0 0 auto;
 }
 
-.sidebar-search-btn {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px;
-    opacity: 0.7;
-    transition: opacity 0.2s;
-    flex: 0 0 auto;
-}
-
-.sidebar-search-btn:hover {
-    opacity: 1;
-}
-
 .sidebar-search-input {
-    width: 0;
-    opacity: 0;
+    width: 100%;
     border: 1px solid var(--border-color);
     background: var(--input-bg);
     color: var(--text-primary);
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 8px 12px;
+    border-radius: 6px;
     font-size: 12px;
-    transition: width 0.3s ease, opacity 0.3s ease;
-    overflow: hidden;
-}
-
-.sidebar-search-input.active {
-    width: 120px;
-    opacity: 1;
+    transition: all 0.2s ease;
 }
 
 .sidebar-search-input:focus {
     outline: none;
     border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.sidebar-search-input::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
 }
 
 .sidebar-menu {

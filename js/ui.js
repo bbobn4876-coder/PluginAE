@@ -78,7 +78,6 @@ const UIManager = {
             // Sidebar
             folderTree: document.getElementById('folderTree'),
             favoritesMenuItem: document.getElementById('favoritesMenuItem'),
-            sidebarSearchBtn: document.getElementById('sidebarSearchBtn'),
             sidebarSearchInput: document.getElementById('sidebarSearchInput'),
 
             // Content
@@ -137,15 +136,7 @@ const UIManager = {
             });
         }
 
-        // Sidebar search button
-        if (this.elements.sidebarSearchBtn) {
-            this.elements.sidebarSearchBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleSidebarSearch();
-            });
-        }
-
-        // Sidebar search input
+        // Sidebar search input (always visible)
         if (this.elements.sidebarSearchInput) {
             this.elements.sidebarSearchInput.addEventListener('input', (e) => {
                 const query = e.target.value;
@@ -156,20 +147,13 @@ const UIManager = {
 
             this.elements.sidebarSearchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    this.closeSidebarSearch();
+                    // Clear search on Escape
+                    e.target.value = '';
+                    this.filterFolderTree('');
+                    this.filterFiles('');
                 }
             });
         }
-
-        // Close sidebar search when clicking outside
-        document.addEventListener('click', (e) => {
-            if (this.elements.sidebarSearchInput &&
-                this.elements.sidebarSearchInput.classList.contains('active')) {
-                if (!e.target.closest('.sidebar-header')) {
-                    this.closeSidebarSearch();
-                }
-            }
-        });
 
         // Grid size slider
         if (this.elements.gridSizeSlider) {
@@ -1684,34 +1668,6 @@ const UIManager = {
 
             grid.appendChild(element);
         });
-    },
-
-    /**
-     * Toggle sidebar search input
-     */
-    toggleSidebarSearch: function() {
-        const input = this.elements.sidebarSearchInput;
-
-        if (input.classList.contains('active')) {
-            this.closeSidebarSearch();
-        } else {
-            input.classList.add('active');
-            // Focus on input after animation
-            setTimeout(() => {
-                input.focus();
-            }, 100);
-        }
-    },
-
-    /**
-     * Close sidebar search input
-     */
-    closeSidebarSearch: function() {
-        const input = this.elements.sidebarSearchInput;
-        input.classList.remove('active');
-        input.value = '';
-        // Reset folder tree to show all items
-        this.filterFolderTree('');
     },
 
     /**

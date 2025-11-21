@@ -119,6 +119,46 @@ PluginAE/
 1. Package the extension as a ZXP file using Adobe's signing tools
 2. Install using [ZXP Installer](https://aescripts.com/learn/zxp-installer/)
 
+## Configuration
+
+### Projects Folder Path
+
+By default, the plugin scans files from:
+```
+E:/af/Adobe After Effects 2025/Projects
+```
+
+**To change the Projects folder path:**
+
+1. Open the file: `js/host.jsx`
+2. Find the function `scanProjectsFolder()` (around line 453)
+3. Change this line:
+   ```javascript
+   var projectsFolder = new Folder("E:/af/Adobe After Effects 2025/Projects");
+   ```
+4. Replace with your desired path:
+   ```javascript
+   var projectsFolder = new Folder("C:/Your/Custom/Path/Projects");
+   ```
+
+**Important Notes:**
+- Use forward slashes `/` even on Windows
+- Path must be absolute (not relative)
+- The folder must exist before scanning
+- Restart After Effects after changing the path
+
+**Example paths:**
+```javascript
+// Windows example
+var projectsFolder = new Folder("D:/MyProjects/AE_Files");
+
+// Alternative Windows path
+var projectsFolder = new Folder("C:/Users/YourName/Documents/AE Projects");
+
+// macOS example
+var projectsFolder = new Folder("/Users/yourname/Documents/AE_Projects");
+```
+
 ## Usage
 
 ### First Time Login
@@ -135,9 +175,10 @@ Enter the password when the plugin opens. You'll stay logged in for your After E
 3. Or drag and drop `.pack` files directly into the panel
 
 #### Load from Projects Folder:
-1. Place `.jsx` and `.gif` files in the `Projects/` folder
-2. Click **"Scan Projects Folder"** button
-3. All compatible files will be loaded automatically
+1. Place your files (`.aep`, `.pack`, `.jsx`, `.gif`, images, videos, etc.) in your configured Projects folder
+2. Default location: `E:/af/Adobe After Effects 2025/Projects`
+3. Click the **Refresh button (🔄)** in the sidebar to scan files
+4. Files will appear organized by folders in the left navigation panel
 
 ### Creating Groups
 

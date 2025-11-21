@@ -452,9 +452,8 @@ function executeJSXFile(filePath) {
  */
 function scanProjectsFolder() {
     try {
-        // Get extension path
-        var extensionPath = new File($.fileName).parent.parent.fsName;
-        var projectsFolder = new Folder(extensionPath + "/Projects");
+        // Use absolute path to Projects folder
+        var projectsFolder = new Folder("E:/af/Adobe After Effects 2025/Projects");
 
         if (!projectsFolder.exists) {
             return JSON.stringify({

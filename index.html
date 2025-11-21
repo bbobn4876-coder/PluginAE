@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxMotion</title>
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <h1 class="gradient-title">FluxMotion</h1>
+                <p>Enter password to continue</p>
+            </div>
+            <div class="login-form">
+                <input type="password" id="passwordInput" class="login-input" placeholder="Password" autocomplete="off">
+                <button id="loginBtn" class="btn btn-primary btn-block">Login</button>
+                <div id="loginError" class="login-error hidden">Incorrect password</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="container hidden">
+        <!-- Video Preview Section -->
+        <section class="preview-player">
+            <div id="videoPreview" class="video-container">
+                <div id="videoPlaceholder" class="video-placeholder">
+                    <div class="placeholder-icon">🎥</div>
+                    <div class="placeholder-text">Select a file to preview</div>
+                </div>
+                <iframe id="youtubePreview" class="youtube-preview hidden" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                <div id="videoPlayerContainer" class="video-player-container hidden">
+                    <video id="videoPlayer" class="video-player" autoplay loop muted></video>
+                </div>
+                <img id="imagePreview" class="image-preview hidden" alt="Preview">
+                <div id="audioPlayerContainer" class="audio-player-container hidden">
+                    <div class="audio-player-wrapper">
+                        <canvas id="audioWaveform" class="audio-waveform"></canvas>
+                        <audio id="audioPlayer" class="audio-player"></audio>
+                        <div class="audio-controls">
+                            <button id="playPauseBtn" class="audio-btn play-pause-btn">
+                                <span class="play-icon">▶</span>
+                            </button>
+                            <div class="time-display">
+                                <span id="currentTime" class="time-current">0:00</span>
+                                <span class="time-separator">/</span>
+                                <span id="duration" class="time-duration">0:00</span>
+                            </div>
+                            <div class="progress-container">
+                                <div id="progressBar" class="progress-bar">
+                                    <div id="progressFill" class="progress-fill"></div>
+                                    <div id="progressHandle" class="progress-handle"></div>
+                                </div>
+                            </div>
+                            <div class="volume-control">
+                                <button id="muteBtn" class="audio-btn volume-btn">
+                                    <span class="volume-icon">🔊</span>
+                                </button>
+                                <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="50">
+                                <span id="volumeValue" class="volume-value">50%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="preview-controls">
+                <div class="preview-info">
+                    <span id="currentFileName" class="current-file-name">No file selected</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- FluxMotion Title -->
+        <div class="plugin-header">
+            <h1 class="gradient-title">FluxMotion</h1>
+        </div>
+
+        <!-- Navigation Bar - HIDDEN -->
+        <section class="navigation-section" style="display: none;">
+            <div class="breadcrumbs">
+                <button id="backBtn" class="btn btn-icon" title="Go back" disabled>
+                    <span>←</span>
+                </button>
+                <div id="breadcrumbPath" class="breadcrumb-path">
+                    <span class="breadcrumb-item active">Projects</span>
+                </div>
+                <div id="searchContainer" class="search-container">
+                    <button id="searchBtn" class="btn btn-icon search-btn" title="Search files">
+                        <span>🔍</span>
+                    </button>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search files..." />
+                </div>
+                <button id="refreshBtn" class="btn btn-secondary btn-small">
+                    <span>🔄</span> Refresh
+                </button>
+            </div>
+        </section>
+
+        <!-- Two Column Layout: Sidebar + Content -->
+        <section class="main-layout">
+            <!-- Left Sidebar: Folders Navigation -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h3>Navigation</h3>
+                    <button id="sidebarSearchBtn" class="sidebar-search-btn" title="Search">🔍</button>
+                    <input type="text" id="sidebarSearchInput" class="sidebar-search-input" placeholder="Search..." />
+                </div>
+                <div class="sidebar-menu">
+                    <div id="folderTree" class="folder-tree">
+                        <!-- Folder tree will be rendered here -->
+                    </div>
+                </div>
+                <div class="sidebar-footer">
+                    <div id="favoritesMenuItem" class="menu-item" title="Favorites">
+                        <span class="menu-icon">⭐</span>
+                        <span class="menu-text">Favorites</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Right Content Area: Files Grid -->
+            <main class="content-section">
+                <div id="folderGrid" class="folder-grid">
+                    <!-- Folders and files will be rendered here -->
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <div class="empty-state-text">Чтобы просмотреть файлы, откройте папку слева</div>
+                    </div>
+                </div>
+            </main>
+        </section>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notificationToast" class="notification-toast hidden"></div>
+
+    <!-- Scripts -->
+    <script src="lib/CSInterface.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/favorites.js"></script>
+    <script src="js/presets.js"></script>
+    <script src="js/browser.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

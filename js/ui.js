@@ -876,15 +876,20 @@ const UIManager = {
             // Don't open file if clicking favorite button
             if (e.target.closest('.favorite-btn')) return;
 
+            const ext = fileItem.fileType?.toLowerCase();
+
             // For .aep and .pack files, import to timeline (openAEProject behavior)
-            if (['aep', 'pack'].includes(fileItem.fileType?.toLowerCase())) {
+            if (['aep', 'pack'].includes(ext)) {
                 this.importAepToTimeline(fileItem);
             } else if (fileItem.type === 'aep-composition') {
                 // For compositions inside .aep files, import to timeline
                 this.importCompositionToTimeline(fileItem);
-            } else if (fileItem.fileType?.toLowerCase() === 'jsx') {
+            } else if (ext === 'jsx') {
                 // For .jsx files, execute and add to timeline (like .aep)
                 this.executeJsxToTimeline(fileItem);
+            } else if (ext === 'prst' || ext === 'ffx') {
+                // For .prst and .ffx files, apply to selected layer
+                this.applyPresetToLayer(fileItem);
             } else {
                 // For other files, use normal handling
                 this.openInAfterEffects(fileItem);
@@ -1077,6 +1082,32 @@ const UIManager = {
                 this.showNotification('✗ ' + result);
             } else {
                 this.showNotification('✓ ' + result);
+            }
+        });
+    },
+
+    /**
+     * Apply preset (.prst or .ffx) to selected layer
+     */
+    applyPresetToLayer: function(fileItem) {
+        if (!fileItem.filePath) {
+            this.showNotification('✗ Invalid file path');
+            return;
+        }
+
+        if (!window.AEInterface) {
+            this.showNotification('After Effects integration not available');
+            return;
+        }
+
+        this.showNotification('Applying preset to selected layer...');
+        window.AEInterface.applyPreset(fileItem.filePath, (result) => {
+            if (result === 'true') {
+                this.showNotification('✓ Preset applied successfully!');
+            } else if (result.includes('Error') || result.includes('error')) {
+                this.showNotification('✗ ' + result);
+            } else {
+                this.showNotification('✓ Preset applied!');
             }
         });
     },

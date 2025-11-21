@@ -78,6 +78,7 @@ const UIManager = {
             // Sidebar
             folderTree: document.getElementById('folderTree'),
             favoritesMenuItem: document.getElementById('favoritesMenuItem'),
+            sidebarRefreshBtn: document.getElementById('sidebarRefreshBtn'),
             sidebarSearchBtn: document.getElementById('sidebarSearchBtn'),
             sidebarSearchInput: document.getElementById('sidebarSearchInput'),
 
@@ -105,6 +106,13 @@ const UIManager = {
         this.elements.refreshBtn.addEventListener('click', () => {
             this.loadFiles();
         });
+
+        // Sidebar refresh button
+        if (this.elements.sidebarRefreshBtn) {
+            this.elements.sidebarRefreshBtn.addEventListener('click', () => {
+                this.loadFiles();
+            });
+        }
 
         // Back button
         this.elements.backBtn.addEventListener('click', () => {
@@ -463,6 +471,10 @@ const UIManager = {
     loadFiles: function() {
         this.showNotification('Loading files from Projects folder...');
 
+        // Reset current path to root
+        FileBrowser.currentPath = [];
+        FileBrowser.currentAepFile = null;
+
         FileBrowser.loadProjectsFolder((result) => {
             if (result.error) {
                 this.showNotification('Error: ' + result.error);
@@ -477,9 +489,18 @@ const UIManager = {
             // Render folder tree in sidebar
             this.renderFolderTree(result.items || []);
 
-            // Don't render content grid initially - show placeholder message instead
-            // Files will be shown when a folder is clicked in the tree
+            // Clear folder grid and show placeholder
+            const grid = this.elements.folderGrid;
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📁</div>
+                    <div class="empty-state-text">Чтобы просмотреть файлы, откройте папку слева</div>
+                </div>
+            `;
+
+            // Update breadcrumbs to root
             this.updateBreadcrumbs();
+
             // Show static preview for Projects folder
             this.showProjectsPreview();
         });

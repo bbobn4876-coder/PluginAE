@@ -584,6 +584,26 @@ body {
     flex: 0 0 auto;
 }
 
+.sidebar-refresh-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s, transform 0.2s;
+    flex: 0 0 auto;
+}
+
+.sidebar-refresh-btn:hover {
+    opacity: 1;
+    transform: rotate(90deg);
+}
+
+.sidebar-refresh-btn:active {
+    transform: rotate(180deg);
+}
+
 .sidebar-search-btn {
     background: transparent;
     border: none;

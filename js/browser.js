@@ -557,7 +557,8 @@ const FileBrowser = {
                 }
 
                 // Check if item name matches search query
-                if (itemName.includes(searchQuery)) {
+                // Only add files to search results, not folders
+                if (itemName.includes(searchQuery) && item.type !== 'folder') {
                     // Clone the item and add parent path info
                     const resultItem = { ...item };
                     resultItem.searchPath = parentPath ? parentPath + '/' + item.name : item.name;

@@ -688,11 +688,14 @@ const UIManager = {
             return;
         }
 
-        // Render all items (folders and files, including .aep files)
+        // Render only files (no folders in the grid)
         this.currentItems.forEach(item => {
-            const element = item.type === 'folder'
-                ? this.createFolderElement(item)
-                : this.createFileElement(item);
+            // Skip folders - only show files
+            if (item.type === 'folder') {
+                return;
+            }
+
+            const element = this.createFileElement(item);
             grid.appendChild(element);
         });
     },
@@ -772,13 +775,7 @@ const UIManager = {
         // Decode URL encoding (e.g., %20 for spaces)
         name.textContent = this.decodeFileName(folderItem.name);
 
-        const info = document.createElement('div');
-        info.className = 'item-info';
-        const fileCount = folderItem.files?.length || 0;
-        info.textContent = `${fileCount} ${fileCount === 1 ? 'file' : 'files'}`;
-
         div.appendChild(name);
-        div.appendChild(info);
 
         div.addEventListener('click', (e) => {
             // Don't open folder if clicking favorite button
@@ -865,20 +862,7 @@ const UIManager = {
         // Decode URL encoding (e.g., %20 for spaces)
         name.textContent = this.decodeFileName(fileItem.name);
 
-        const info = document.createElement('div');
-        info.className = 'item-info';
-
-        // Show appropriate info based on file type
-        if (fileItem.type === 'aep-composition' && fileItem.info) {
-            info.textContent = `${fileItem.info.width}x${fileItem.info.height} • ${fileItem.info.duration}s`;
-        } else if (fileItem.type === 'aep-footage' && fileItem.info) {
-            info.textContent = `${fileItem.info.width}x${fileItem.info.height}`;
-        } else {
-            info.textContent = FileBrowser.formatFileSize(fileItem.fileSize);
-        }
-
         div.appendChild(name);
-        div.appendChild(info);
 
         div.addEventListener('click', (e) => {
             // Don't open file if clicking favorite button

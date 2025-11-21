@@ -518,16 +518,18 @@ const UIManager = {
         const header = document.createElement('div');
         header.className = 'folder-tree-header';
 
-        // Check if folder has files
+        // Check if folder has files or subfolders
         const hasFiles = folder.files && folder.files.length > 0;
+        const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
+        const hasChildren = hasFiles || hasSubfolders;
 
-        if (hasFiles) {
+        if (hasChildren) {
             const expandIcon = document.createElement('span');
             expandIcon.className = 'folder-expand-icon';
             expandIcon.textContent = '▶';
             header.appendChild(expandIcon);
         } else {
-            // Add spacer if no files
+            // Add spacer if no files or subfolders
             const spacer = document.createElement('span');
             spacer.style.width = '16px';
             header.appendChild(spacer);
@@ -548,40 +550,43 @@ const UIManager = {
 
         // Add click handler to open folder
         header.addEventListener('click', (e) => {
-            if (hasFiles) {
-                // Toggle expand/collapse
-                const isExpanded = header.classList.contains('expanded');
-                header.classList.toggle('expanded');
+            const isCurrentlyExpanded = header.classList.contains('expanded');
+            const isCurrentlyActive = header.classList.contains('active');
 
-                const children = container.querySelector('.folder-tree-children');
-                if (children) {
-                    children.classList.toggle('expanded');
-                }
+            if (hasChildren) {
+                // If clicking on an already active and expanded folder, collapse it
+                if (isCurrentlyActive && isCurrentlyExpanded) {
+                    header.classList.remove('expanded');
+                    header.classList.remove('active');
 
-                // If collapsing, show placeholder in right panel
-                if (isExpanded) {
+                    const children = container.querySelector('.folder-tree-children');
+                    if (children) {
+                        children.classList.remove('expanded');
+                    }
+
+                    // Show placeholder in right panel
                     this.showFolderCollapsedPlaceholder();
                     return;
                 }
             }
 
-            // Also open folder in main view
+            // Open folder in main view (will also handle expand/collapse and highlighting)
             this.openFolder(folder);
         });
 
-        // Create children container if folder has files
-        if (hasFiles) {
+        // Create children container if folder has files or subfolders
+        const hasSubfolders = folder.subfolders && folder.subfolders.length > 0;
+        if (hasFiles || hasSubfolders) {
             const children = document.createElement('div');
             children.className = 'folder-tree-children';
 
-            // Add files as simple items (no expand)
-            folder.files.forEach(file => {
-                if (file.type === 'folder') {
-                    // Recursive for subfolders
-                    const subItem = this.createFolderTreeItem(file);
+            // Add subfolders first
+            if (hasSubfolders) {
+                folder.subfolders.forEach(subfolder => {
+                    const subItem = this.createFolderTreeItem(subfolder);
                     children.appendChild(subItem);
-                }
-            });
+                });
+            }
 
             container.appendChild(children);
         }
@@ -851,8 +856,8 @@ const UIManager = {
                 // For compositions inside .aep files, import to timeline
                 this.importCompositionToTimeline(fileItem);
             } else if (fileItem.fileType?.toLowerCase() === 'jsx') {
-                // For .jsx files, import to project
-                this.importJsxToProject(fileItem);
+                // For .jsx files, execute script and add to timeline (like .aep)
+                this.importJsxToTimeline(fileItem);
             } else {
                 // For other files, use normal handling
                 this.openInAfterEffects(fileItem);
@@ -928,7 +933,48 @@ const UIManager = {
             this.renderFolderGrid();
             this.updateBreadcrumbs();
             this.clearPreview();
+
+            // Highlight the opened folder in sidebar and collapse others
+            this.highlightOpenedFolder(folderItem);
         }
+    },
+
+    /**
+     * Highlight the opened folder in sidebar and collapse others
+     */
+    highlightOpenedFolder: function(folderItem) {
+        const folderTree = this.elements.folderTree;
+        if (!folderTree) return;
+
+        // Remove all active states and collapse all folders
+        const allHeaders = folderTree.querySelectorAll('.folder-tree-header');
+        allHeaders.forEach(header => {
+            header.classList.remove('active');
+
+            // Collapse if expanded
+            if (header.classList.contains('expanded')) {
+                header.classList.remove('expanded');
+                const children = header.parentElement.querySelector('.folder-tree-children');
+                if (children) {
+                    children.classList.remove('expanded');
+                }
+            }
+        });
+
+        // Find and highlight the opened folder
+        allHeaders.forEach(header => {
+            const nameSpan = header.querySelector('.folder-tree-name');
+            if (nameSpan && nameSpan.textContent === this.decodeFileName(folderItem.name)) {
+                header.classList.add('active');
+
+                // Expand this folder
+                header.classList.add('expanded');
+                const children = header.parentElement.querySelector('.folder-tree-children');
+                if (children) {
+                    children.classList.add('expanded');
+                }
+            }
+        });
     },
 
     /**
@@ -998,7 +1044,33 @@ const UIManager = {
     },
 
     /**
-     * Import .jsx file to After Effects project
+     * Import .jsx file to After Effects project and add to timeline
+     */
+    importJsxToTimeline: function(fileItem) {
+        if (!fileItem.filePath) {
+            this.showNotification('✗ Invalid file path');
+            return;
+        }
+
+        if (!window.AEInterface) {
+            this.showNotification('After Effects integration not available');
+            return;
+        }
+
+        this.showNotification('Executing JSX and adding to timeline...');
+        window.AEInterface.executeJSX(fileItem.filePath, (result) => {
+            if (result === 'true' || result.includes('true')) {
+                this.showNotification('✓ JSX executed and added to timeline!');
+            } else if (result.includes('Error') || result.includes('error')) {
+                this.showNotification('✗ ' + result);
+            } else {
+                this.showNotification('✓ JSX executed successfully');
+            }
+        });
+    },
+
+    /**
+     * Import .jsx file to After Effects project (without adding to timeline)
      */
     importJsxToProject: function(fileItem) {
         if (!fileItem.filePath) {

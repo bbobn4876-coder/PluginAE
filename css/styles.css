@@ -569,6 +569,9 @@ body {
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-color);
     background: var(--primary-bg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .sidebar-header h3 {
@@ -578,6 +581,45 @@ body {
     color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    flex: 0 0 auto;
+}
+
+.sidebar-search-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    flex: 0 0 auto;
+}
+
+.sidebar-search-btn:hover {
+    opacity: 1;
+}
+
+.sidebar-search-input {
+    width: 0;
+    opacity: 0;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: width 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+}
+
+.sidebar-search-input.active {
+    width: 120px;
+    opacity: 1;
+}
+
+.sidebar-search-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
 }
 
 .sidebar-menu {

@@ -78,6 +78,8 @@ const UIManager = {
             // Sidebar
             folderTree: document.getElementById('folderTree'),
             favoritesMenuItem: document.getElementById('favoritesMenuItem'),
+            sidebarSearchBtn: document.getElementById('sidebarSearchBtn'),
+            sidebarSearchInput: document.getElementById('sidebarSearchInput'),
 
             // Content
             folderGrid: document.getElementById('folderGrid'),
@@ -132,6 +134,37 @@ const UIManager = {
                 this.showFavorites();
             });
         }
+
+        // Sidebar search button
+        if (this.elements.sidebarSearchBtn) {
+            this.elements.sidebarSearchBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggleSidebarSearch();
+            });
+        }
+
+        // Sidebar search input
+        if (this.elements.sidebarSearchInput) {
+            this.elements.sidebarSearchInput.addEventListener('input', (e) => {
+                this.filterFolderTree(e.target.value);
+            });
+
+            this.elements.sidebarSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.closeSidebarSearch();
+                }
+            });
+        }
+
+        // Close sidebar search when clicking outside
+        document.addEventListener('click', (e) => {
+            if (this.elements.sidebarSearchInput &&
+                this.elements.sidebarSearchInput.classList.contains('active')) {
+                if (!e.target.closest('.sidebar-header')) {
+                    this.closeSidebarSearch();
+                }
+            }
+        });
 
         // Setup global drag-and-drop handler
         this.setupDragAndDrop();
@@ -524,6 +557,12 @@ const UIManager = {
                 if (children) {
                     children.classList.toggle('expanded');
                 }
+
+                // If collapsing, show placeholder in right panel
+                if (isExpanded) {
+                    this.showFolderCollapsedPlaceholder();
+                    return;
+                }
             }
 
             // Also open folder in main view
@@ -811,6 +850,9 @@ const UIManager = {
             } else if (fileItem.type === 'aep-composition') {
                 // For compositions inside .aep files, import to timeline
                 this.importCompositionToTimeline(fileItem);
+            } else if (fileItem.fileType?.toLowerCase() === 'jsx') {
+                // For .jsx files, import to project
+                this.importJsxToProject(fileItem);
             } else {
                 // For other files, use normal handling
                 this.openInAfterEffects(fileItem);
@@ -953,6 +995,32 @@ const UIManager = {
                 }
             }
         );
+    },
+
+    /**
+     * Import .jsx file to After Effects project
+     */
+    importJsxToProject: function(fileItem) {
+        if (!fileItem.filePath) {
+            this.showNotification('✗ Invalid file path');
+            return;
+        }
+
+        if (!window.AEInterface) {
+            this.showNotification('After Effects integration not available');
+            return;
+        }
+
+        this.showNotification('Importing JSX file to project...');
+        window.AEInterface.importFile(fileItem.filePath, (result) => {
+            if (result === 'true' || result.includes('imported')) {
+                this.showNotification('✓ JSX file imported to project!');
+            } else if (result.includes('Error') || result.includes('error')) {
+                this.showNotification('✗ ' + result);
+            } else {
+                this.showNotification('✓ ' + result);
+            }
+        });
     },
 
     /**
@@ -1272,6 +1340,31 @@ const UIManager = {
     },
 
     /**
+     * Show placeholder when folder is collapsed
+     */
+    showFolderCollapsedPlaceholder: function() {
+        // Hide all other preview elements
+        this.elements.videoPlayerContainer.classList.add('hidden');
+        this.elements.youtubePreview.classList.add('hidden');
+        this.elements.audioPlayerContainer.classList.add('hidden');
+        this.elements.videoPlaceholder.classList.add('hidden');
+
+        // Show static image for collapsed folder
+        this.elements.imagePreview.src = 'img/PreviewProjects.jpg';
+        this.elements.imagePreview.classList.remove('hidden');
+        this.elements.currentFileName.textContent = 'Чтобы просмотреть файлы, откройте папку слева';
+
+        // Clear the content grid and show placeholder
+        const grid = this.elements.folderGrid;
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📁</div>
+                <div class="empty-state-text">Чтобы просмотреть файлы, откройте папку слева</div>
+            </div>
+        `;
+    },
+
+    /**
      * Apply to composition
      */
     applyToComposition: function(fileItem) {
@@ -1462,6 +1555,73 @@ const UIManager = {
             }
 
             grid.appendChild(element);
+        });
+    },
+
+    /**
+     * Toggle sidebar search input
+     */
+    toggleSidebarSearch: function() {
+        const input = this.elements.sidebarSearchInput;
+
+        if (input.classList.contains('active')) {
+            this.closeSidebarSearch();
+        } else {
+            input.classList.add('active');
+            // Focus on input after animation
+            setTimeout(() => {
+                input.focus();
+            }, 100);
+        }
+    },
+
+    /**
+     * Close sidebar search input
+     */
+    closeSidebarSearch: function() {
+        const input = this.elements.sidebarSearchInput;
+        input.classList.remove('active');
+        input.value = '';
+        // Reset folder tree to show all items
+        this.filterFolderTree('');
+    },
+
+    /**
+     * Filter folder tree by search query
+     */
+    filterFolderTree: function(query) {
+        const folderTree = this.elements.folderTree;
+        const items = folderTree.querySelectorAll('.folder-tree-item');
+
+        if (!query || query.trim() === '') {
+            // Show all items
+            items.forEach(item => {
+                item.style.display = '';
+            });
+            return;
+        }
+
+        const lowerQuery = query.toLowerCase();
+
+        // Filter items
+        items.forEach(item => {
+            const itemName = item.querySelector('.folder-tree-header')?.textContent.toLowerCase() || '';
+
+            if (itemName.includes(lowerQuery)) {
+                item.style.display = '';
+                // Expand parent if this item matches
+                let parent = item.parentElement?.closest('.folder-tree-item');
+                while (parent) {
+                    parent.style.display = '';
+                    const header = parent.querySelector('.folder-tree-header');
+                    if (header && !header.classList.contains('expanded')) {
+                        header.click();
+                    }
+                    parent = parent.parentElement?.closest('.folder-tree-item');
+                }
+            } else {
+                item.style.display = 'none';
+            }
         });
     }
 };

@@ -1,0 +1,60 @@
+/* Theme Variables */
+:root {
+    /* Light Theme Colors */
+    --primary-bg: #f5f5f5;
+    --secondary-bg: #ffffff;
+    --input-bg: #ffffff;
+    --hover-bg: #e8e8e8;
+    --border-color: #d0d0d0;
+    --border-light: #e5e5e5;
+    --text-primary: #333333;
+    --text-secondary: #777777;
+    --accent-color: #0099ff;
+    --tag-bg: #e0e0e0;
+}
+
+/* Dark Theme Colors (After Effects Default) */
+body[data-theme="dark"],
+body {
+    --primary-bg: #232323;
+    --secondary-bg: #2d2d2d;
+    --input-bg: #1e1e1e;
+    --hover-bg: #3a3a3a;
+    --border-color: #404040;
+    --border-light: #333333;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-color: #00a4ff;
+    --tag-bg: #404040;
+}
+
+/* Apply background to body */
+body {
+    background-color: var(--primary-bg);
+    color: var(--text-primary);
+}
+
+/* Group Color Variations */
+.group-color.blue {
+    background-color: #3498db;
+}
+
+.group-color.green {
+    background-color: #2ecc71;
+}
+
+.group-color.red {
+    background-color: #e74c3c;
+}
+
+.group-color.yellow {
+    background-color: #f39c12;
+}
+
+.group-color.purple {
+    background-color: #9b59b6;
+}
+
+.group-color.orange {
+    background-color: #e67e22;
+}

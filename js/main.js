@@ -157,8 +157,31 @@ window.AEInterface = {
      * Scan FluxMotion folder for files
      */
     scanProjectsFolder: function(callback) {
+        console.log('AEInterface.scanProjectsFolder() called');
+
+        if (!this.csInterface) {
+            console.error('CSInterface not initialized');
+            if (callback) callback(JSON.stringify({ error: 'CSInterface not initialized. Make sure the plugin is running in After Effects.' }));
+            return;
+        }
+
         const script = 'scanProjectsFolder()';
-        this.evalScript(script, callback);
+        console.log('Executing ExtendScript:', script);
+
+        this.evalScript(script, (result) => {
+            console.log('ExtendScript result:', result);
+
+            if (!result || result === 'undefined' || result.trim() === '') {
+                console.error('Empty or undefined result from ExtendScript');
+                const errorResponse = JSON.stringify({
+                    error: 'ExtendScript returned empty result. Verify that:\n1. host.jsx is loaded in manifest.xml\n2. The Projects folder exists at: E:/af/Adobe After Effects 2025/Projects\n3. After Effects has permissions to access the folder'
+                });
+                if (callback) callback(errorResponse);
+                return;
+            }
+
+            if (callback) callback(result);
+        });
     },
 
     /**

@@ -24,35 +24,61 @@ const FileBrowser = {
      * Load files from FluxMotion folder
      */
     loadProjectsFolder: function(callback) {
+        console.log('FileBrowser.loadProjectsFolder() called');
+
         if (!window.AEInterface || !window.AEInterface.scanProjectsFolder) {
             console.error('AEInterface not available');
-            if (callback) callback({ error: 'After Effects integration not available' });
+            if (callback) callback({ error: 'After Effects integration not available. Make sure the plugin is running inside After Effects.' });
             return;
         }
 
+        console.log('Calling AEInterface.scanProjectsFolder()...');
+
         window.AEInterface.scanProjectsFolder((result) => {
+            console.log('Raw result from ExtendScript:', result);
+
             try {
+                if (!result || result === 'undefined' || result === '') {
+                    console.error('Empty result from scanProjectsFolder');
+                    if (callback) callback({ error: 'No data returned from ExtendScript. Check if host.jsx is loaded correctly.' });
+                    return;
+                }
+
                 const data = JSON.parse(result);
+                console.log('Parsed data:', data);
 
                 if (data.error) {
-                    console.error('Error loading FluxMotion folder:', data.error);
+                    console.error('Error loading Projects folder:', data.error);
                     if (callback) callback(data);
                     return;
                 }
 
+                if (!data.files || !Array.isArray(data.files)) {
+                    console.warn('No files array in response');
+                    data.files = [];
+                }
+
+                if (!data.folders || !Array.isArray(data.folders)) {
+                    console.warn('No folders array in response');
+                    data.folders = [];
+                }
+
+                console.log(`Found ${data.files.length} files and ${data.folders.length} folders`);
+
                 // Organize data into folder structure
                 this.currentItems = this.organizeFolderStructure(data.files, data.folders);
+                console.log('Organized items:', this.currentItems);
 
                 if (callback) callback({
                     success: true,
                     items: this.currentItems,
                     fileCount: data.files ? data.files.length : 0,
-                    folderCount: data.folderCount || 0
+                    folderCount: data.folderCount || data.folders.length || 0
                 });
 
             } catch (e) {
-                console.error('Error parsing folder data:', e);
-                if (callback) callback({ error: 'Failed to parse folder data' });
+                console.error('Error parsing folder data:', e, 'Raw result:', result);
+                if (callback) callback({ error: 'Failed to parse folder data: ' + e.message });
             }
         });
     },

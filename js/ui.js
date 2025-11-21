@@ -469,22 +469,54 @@ const UIManager = {
      * Load files from Projects folder
      */
     loadFiles: function() {
-        this.showNotification('Loading files from Projects folder...');
+        console.log('UIManager.loadFiles() called');
+        this.showNotification('Scanning files from E:/af/Adobe After Effects 2025/Projects...');
 
         // Reset current path to root
         FileBrowser.currentPath = [];
         FileBrowser.currentAepFile = null;
 
+        // Check if AEInterface is available
+        if (!window.AEInterface || !window.AEInterface.scanProjectsFolder) {
+            console.error('AEInterface not available!');
+            this.showNotification('❌ Error: After Effects integration not available. Please restart the plugin.');
+            return;
+        }
+
+        console.log('Calling FileBrowser.loadProjectsFolder...');
+
         FileBrowser.loadProjectsFolder((result) => {
+            console.log('FileBrowser.loadProjectsFolder callback received:', result);
+
             if (result.error) {
-                this.showNotification('Error: ' + result.error);
+                console.error('Error from scanProjectsFolder:', result.error);
+                this.showNotification('❌ Error: ' + result.error);
+
+                // Show error in folder tree
+                const tree = this.elements.folderTree;
+                if (tree) {
+                    tree.innerHTML = `
+                        <div style="padding: 12px; color: #ff6b6b; text-align: center;">
+                            <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+                            <div style="font-size: 12px; line-height: 1.4;">
+                                <strong>Error loading files:</strong><br>
+                                ${result.error}
+                            </div>
+                        </div>
+                    `;
+                }
                 return;
             }
 
             this.currentItems = result.items || [];
             // Store all items for global search
             FileBrowser.allItems = result.items || [];
-            this.showNotification(`Loaded ${result.fileCount} files from ${result.folderCount} folders`);
+
+            const fileCount = result.fileCount || 0;
+            const folderCount = result.folderCount || 0;
+
+            console.log(`Successfully loaded ${fileCount} files from ${folderCount} folders`);
+            this.showNotification(`✓ Loaded ${fileCount} files from ${folderCount} folders`);
 
             // Render folder tree in sidebar
             this.renderFolderTree(result.items || []);

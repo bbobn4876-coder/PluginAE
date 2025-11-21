@@ -455,9 +455,10 @@ function scanProjectsFolder() {
         // Use absolute path to Projects folder
         var projectsFolder = new Folder("E:/af/Adobe After Effects 2025/Projects");
 
+        // Check if folder exists
         if (!projectsFolder.exists) {
             return JSON.stringify({
-                error: "Projects folder not found at: " + projectsFolder.fsName
+                error: "Projects folder not found at: " + projectsFolder.fsName + "\n\nPlease verify:\n1. The folder exists\n2. The path is correct\n3. After Effects has access permissions"
             });
         }
 
@@ -535,16 +536,25 @@ function scanProjectsFolder() {
         // Start scanning from FluxMotion folder
         scanFolder(projectsFolder, '');
 
-        return JSON.stringify({
+        // Prepare result
+        var result = {
             files: files,
             folders: folders,
             count: files.length,
-            folderCount: folders.length
-        });
+            folderCount: folders.length,
+            scannedPath: projectsFolder.fsName
+        };
+
+        // If no files found, add helpful message
+        if (files.length === 0 && folders.length === 0) {
+            result.message = "No files found in: " + projectsFolder.fsName + "\n\nMake sure:\n1. The folder contains files\n2. Files are not hidden\n3. After Effects has read permissions";
+        }
+
+        return JSON.stringify(result);
 
     } catch (e) {
         return JSON.stringify({
-            error: e.toString()
+            error: "Error scanning folder: " + e.toString() + "\n\nLine: " + e.line + "\nFile: " + (e.fileName || "unknown")
         });
     }
 }

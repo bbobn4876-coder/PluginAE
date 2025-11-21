@@ -25,11 +25,14 @@ This guide provides detailed step-by-step instructions for installing the AEP Pr
 
 2. **Copy Plugin Files**
 
-   - Copy the entire `PluginAE` folder to the extensions directory
+   - Copy the entire plugin folder to the extensions directory
+   - **IMPORTANT**: Rename the folder to exactly `FluxMotion` (without any extra characters or hyphens)
    - The final path should be:
      ```
-     C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\PluginAE\
+     C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\FluxMotion\
      ```
+
+   **⚠️ Warning**: Do NOT use long folder names like `PluginAE-claude-ae-plugin-aep-preview-xxxxx`. The folder MUST be named exactly `FluxMotion` or `PluginAE`.
 
 3. **Enable Debug Mode**
 
@@ -81,10 +84,12 @@ This guide provides detailed step-by-step instructions for installing the AEP Pr
 
 2. **Copy Plugin Files**
 
-   Copy the `PluginAE` folder to the extensions directory:
+   Copy the plugin folder to the extensions directory and rename it to `FluxMotion`:
    ```bash
-   sudo cp -R /path/to/PluginAE "/Library/Application Support/Adobe/CEP/extensions/"
+   sudo cp -R /path/to/PluginAE "/Library/Application Support/Adobe/CEP/extensions/FluxMotion"
    ```
+
+   **⚠️ Warning**: The folder MUST be named exactly `FluxMotion` or `PluginAE` (without any extra characters).
 
 3. **Enable Debug Mode**
 
@@ -164,8 +169,9 @@ Follow the same steps as Method 1, but use these directories instead.
 
 1. **Verify installation path**
    - Ensure the folder is in the correct location
-   - The folder name should be exactly `PluginAE` or `com.aep.preview.panel`
-   - Check that `manifest.xml` exists in `PluginAE/CSXS/`
+   - **The folder name MUST be exactly `FluxMotion` or `PluginAE`** (short names only!)
+   - Do NOT use names like `PluginAE-claude-ae-plugin-aep-preview-xxxxx`
+   - Check that `manifest.xml` exists in `FluxMotion/CSXS/`
 
 2. **Check manifest.xml**
    - Open `CSXS/manifest.xml` in a text editor

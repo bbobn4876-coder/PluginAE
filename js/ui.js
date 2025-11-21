@@ -83,6 +83,8 @@ const UIManager = {
 
             // Content
             folderGrid: document.getElementById('folderGrid'),
+            gridSizeSlider: document.getElementById('gridSizeSlider'),
+            gridSizeValue: document.getElementById('gridSizeValue'),
 
             // Toast
             toast: document.getElementById('notificationToast')
@@ -146,7 +148,10 @@ const UIManager = {
         // Sidebar search input
         if (this.elements.sidebarSearchInput) {
             this.elements.sidebarSearchInput.addEventListener('input', (e) => {
-                this.filterFolderTree(e.target.value);
+                const query = e.target.value;
+                // Filter both folder tree and show search results in right panel
+                this.filterFolderTree(query);
+                this.filterFiles(query);
             });
 
             this.elements.sidebarSearchInput.addEventListener('keydown', (e) => {
@@ -165,6 +170,22 @@ const UIManager = {
                 }
             }
         });
+
+        // Grid size slider
+        if (this.elements.gridSizeSlider) {
+            // Load saved grid size
+            const savedSize = localStorage.getItem('gridSize') || '5';
+            this.elements.gridSizeSlider.value = savedSize;
+            this.elements.gridSizeValue.textContent = savedSize;
+            this.updateGridSize(savedSize);
+
+            this.elements.gridSizeSlider.addEventListener('input', (e) => {
+                const size = e.target.value;
+                this.elements.gridSizeValue.textContent = size;
+                this.updateGridSize(size);
+                localStorage.setItem('gridSize', size);
+            });
+        }
 
         // Setup global drag-and-drop handler
         this.setupDragAndDrop();
@@ -1598,6 +1619,20 @@ const UIManager = {
                 searchInput.focus();
             }, 100);
         }
+    },
+
+    /**
+     * Update grid size based on slider value
+     */
+    updateGridSize: function(size) {
+        const grid = this.elements.folderGrid;
+        if (!grid) return;
+
+        // Remove all size classes
+        grid.classList.remove('grid-size-2', 'grid-size-3', 'grid-size-4', 'grid-size-5');
+
+        // Add new size class
+        grid.classList.add(`grid-size-${size}`);
     },
 
     /**

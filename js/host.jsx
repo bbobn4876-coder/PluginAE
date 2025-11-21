@@ -678,8 +678,8 @@ function applyPreset(filePath) {
                 return "Error: Cannot import this file type";
             }
 
-        } else if (fileType === 'ffx' || fileType === 'prst') {
-            // Apply animation preset to selected layer
+        } else if (fileType === 'ffx') {
+            // Apply animation preset to selected layer (for .ffx files)
             // First check if there's a selected layer
             if (activeComp.selectedLayers.length === 0) {
                 return "Error: No layer selected. Please select a layer to apply the preset.";
@@ -690,6 +690,29 @@ function applyPreset(filePath) {
             // Apply the animation preset
             try {
                 selectedLayer.applyPreset(presetFile);
+                return "true";
+            } catch (presetError) {
+                return "Error: Failed to apply preset - " + presetError.toString();
+            }
+
+        } else if (fileType === 'prst') {
+            // Apply animation preset to selected project item (for .prst files)
+            // First check if there's a selected project item
+            var selectedItems = app.project.selection;
+            if (selectedItems.length === 0) {
+                return "Error: No project item selected. Please select a footage item in the project panel.";
+            }
+
+            var selectedItem = selectedItems[0];
+
+            // Check if selected item is a FootageItem
+            if (!(selectedItem instanceof FootageItem)) {
+                return "Error: Selected item is not a footage item. Please select a footage item in the project panel.";
+            }
+
+            // Apply the animation preset to the footage item
+            try {
+                selectedItem.applyPreset(presetFile);
                 return "true";
             } catch (presetError) {
                 return "Error: Failed to apply preset - " + presetError.toString();

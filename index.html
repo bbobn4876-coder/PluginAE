@@ -125,6 +125,11 @@
 
             <!-- Right Content Area: Files Grid -->
             <main class="content-section">
+                <div class="grid-size-control">
+                    <label for="gridSizeSlider">Размер:</label>
+                    <input type="range" id="gridSizeSlider" min="2" max="5" value="5" step="1">
+                    <span id="gridSizeValue">5</span>
+                </div>
                 <div id="folderGrid" class="folder-grid">
                     <!-- Folders and files will be rendered here -->
                     <div class="empty-state">

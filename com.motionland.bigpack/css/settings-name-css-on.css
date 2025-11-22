@@ -1,0 +1,15 @@
+.file-footer {
+	
+}
+
+.file-preview-bookmarks-1 {
+	display: block;
+}
+
+.file-preview-bookmarks {
+	display: none;
+}
+
+.file-browser > ul > li:hover .file-preview-bookmarks {
+	display: none;
+}

@@ -1,0 +1,333 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <!-- fast presets -->
+	<link rel="stylesheet" type="text/css" href="css/compStyle.css">
+	<!-- grid settings css -->
+	<link rel="stylesheet" type="text/css" href="css/settings-grid-css-on.css" id="settings-grid-css">
+	<link rel="stylesheet" type="text/css" href="css/settings-name-css-on.css" id="settings-name-css">
+	<!-- resize star css -->
+	<link rel="stylesheet" type="text/css" href="" id="resize-star-css">
+    <title></title>
+</head>
+
+<body class="hostElt">
+
+    <div id="content">  
+		<div class="nav-panel">
+
+			<div id="nav-panel-container">
+				<div id="nav-panel-table-tr1">
+
+					<div id="nav-panel-container-sidebar-control">
+						<ul id="pixel-tabs">
+						    <li>
+						       <a href="#content-folder" id="folder-tab">Folders</a>
+						    </li>					    
+						</ul>
+					</div>
+					<div id="nav-panel-container-navigation">
+						<table>
+							<tr>
+								<td><a class="nav-panel-navigation" id="nav-back"><div></div></a></td>
+								<td><a class="nav-panel-navigation" id="nav-forward"><div></div></a></td>
+							</tr>
+						</table>
+					</div>
+					<div id="nav-directory-form-container">
+						<form id="nav-directory-form">
+							<input type="text" value="" placeholder="" id="nav-directory">
+						</form>
+					</div>
+
+				</div>
+
+				<div id="nav-panel-table-tr2">
+
+					<div id="nav-panel-container-search">
+						<form>
+							<div id="nav-search-before"></div>
+							<input type="text" value="" placeholder="" id="nav-search">
+						</form>
+					</div>
+					<div id="nav-panel-control-container">
+						<table>
+							<tr>
+								<td><a class="nav-panel-control" id="nav-panel-scripts"><div></div></a></td>
+								<td><a class="nav-panel-control" id="nav-panel-bookmarks" open="false"><div></div></a></td>
+								<td><a class="nav-panel-control" id="nav-panel-settings"><div></div></a></td>
+								<td><a class="nav-panel-control" id="nav-panel-help"><div></div></a></td>
+							</tr>
+						</table>
+					</div>
+
+				</div>
+			</div>
+		</div>
+		<div id="nav-panel-after"></div>
+		<div id="content-middle">
+			<div id="sidebar">
+				<div id="sidebar-content">					 
+					<div id="content-region">
+					    <div id="content-folder">
+					    	<ul id="favorite-tabs">
+					    		<li data-open="true" id="favorite-tabs-collections-link">Collections</li>
+					    		<li data-open="false" id="favorite-tabs-favorite-link">Favorite</li>
+					    	</ul>
+
+					    	<div id="content-favorite">
+					        	<ul class="sidebar-ul" id="favorite-ul-folder" class="favorite-ul-folder"></ul>
+					        </div>
+
+					        <div id="content-collections">
+					        	<ul class="sidebar-ul collections-ul"></ul>
+
+					        	<div id="content-collections-control">
+					        		<ul id="content-collections-control-ul">
+					        			<li id="collections-control-add"><img src="img/addCollectionIcon.png"></li>
+					        			<li id="collections-control-remove"><img src="img/trashIcon.png"></li>
+					        		</ul>
+
+					        		<div style="clear:both"></div>
+					        	</div>
+					        </div>
+
+					   	</div>
+					</div> <!-- #content-region -->
+
+				</div>
+				<div style="clear: both"></div>
+			</div>
+
+			<div class="file-browser"><ul></ul></div>
+
+			<div id="rightbar">
+				<div id="rightbar-content">					 
+					<div id="rightbar-content-region">
+
+					    <div id="rightbar-content-scripts">
+					        <ul class="sidebar-ul">
+					        	<li>123</li>
+					        	<li>123</li>
+					        	<li>123</li>
+					        </ul>
+					   </div>
+					</div> <!-- #content-region -->
+
+				</div>
+				<div style="clear: both"></div>
+			</div>			
+		</div>
+
+		<div id="resizer"></div>
+		<div id="rightbar-resizer"></div>
+
+		<div id="content-footer-before"></div>
+		<div id="content-footer">
+			<div id="content-footer-left">
+				<table>
+					<tr>
+						<td id="play-all-once">
+							<a id="play-all"><i class="fa fa-play"></i><text>Play All</text></a>
+						</td>
+					</tr>
+				</table>
+			</div>			
+			<div id="content-footer-right">
+				<table>
+					<tr>
+						<td id="range-from-td"><a id="range-from"><div></div></a></td>
+						<td><input type="range" min="0" max="350" value="90" step="1" id="range-size"></td>
+						<td id="range-to-td"><a id="range-to"><div></div></a></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+
+		<div class="modal-settings-wrapper">
+			<div class="modal-settings-wrapper-cell">
+				<div class="modal-settings">
+					<ul id="settings-tabs">
+						<li><a aria-selected="true" id="settings-main-tab">Settings</a></li>
+						<li><a id="settings-about-tab">About</a></li>
+					</ul>				
+					<div class="modal-settings-content">	
+						<div id="main-tab">
+							<div class="bordered">
+								<div class="bordered-label">View</div>
+								<div class="string">
+									<input type="checkbox" id="settings-grid">
+									<label for="settings-grid">Show grid</label>
+								</div>
+								<div class="string">
+									<input type="checkbox" id="settings-name">
+									<label for="settings-name">Show names</label>
+								</div>
+							</div>
+							<div class="bordered">
+								<div class="bordered-label">Add Project</div>
+								<div class="string">
+									<input type="radio" name="settings-apply" id="settings-apply-open">
+									<label for="settings-apply-open">Import and open</label>
+								</div>
+								<div class="string">
+									<input type="radio" name="settings-apply" id="settings-apply-add">
+									<label for="settings-apply-add">Import and add</label>
+								</div>
+								<div class="string">
+									<input type="radio" name="settings-apply" id="settings-apply-onlyopen">
+									<label for="settings-apply-onlyopen">Open only</label>
+								</div>								
+							</div>
+							<div class="bordered" style="display: none">
+								<div class="bordered-label">Font preview text</div>
+								<div class="string">
+									<input type="text" id="settings-font-text">
+								</div>
+							</div>
+							<div class="bordered">
+								<div class="bordered-label">Configuration File</div>
+								<div class="string">
+									<ul id="settings-import-export">
+										<li><a id="setting-import">Import Config File</a></li>
+										<li><a id="setting-export">Export Config File</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+
+						<div class="modal-settings-actions">
+							<a id="modal-settings-actions-cancel">Cancel</a>
+							<a id="modal-settings-actions-ok">Ok</a>
+						</div>
+
+						<div id="about-tab">
+							<div class="bordered">
+								<div class="bordered-label">AEViewer tutorials</div>
+								<div class="string">
+									<ul id="settings-tutorials">
+										<li><a id="settings-tutorials-guide">How to Setup and Use AEViewer</a></li>
+										<li><a id="settings-tutorials-prepare">Prepare Your Project</a></li>
+									</ul>
+								</div>
+							</div>
+						</div>
+						<div style="clear: both"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<div id="modal-preview-wrapper">
+			<div id="modal-preview-cell">
+				<div id="modal-preview-inner">
+					<div id="modal-preview-header">
+						In opened project select Composition for preview and set:
+					</div>
+					<div id = "modal-preview-bordered">
+						<table>
+							<tr>
+								<td><img src="img/modal-preview-img2.png"></td>
+								<td>1. Current Time Indicator<br><span class="modal-preview-space"></span> for static preview</td>
+							</tr>
+							<tr>
+								<td><img src="img/modal-preview-img1.png"></td>
+								<td>2. Start and End of the<br><span class="modal-preview-space"></span> Composition And click<br><span class="modal-preview-space"></span> "Next" button</td>
+							</tr>
+						</table>
+
+						<div id="modal-preview-actions">
+							<a id="modal-preview-actions-cancel">Cancel</a>
+							<a id="modal-preview-actions-ok">Next</a>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+
+
+		<!----- help ------>
+
+		<div class="modal-help-wrapper">
+			<div class="modal-help-wrapper-cell">
+				<div class="modal-help">
+					<div class="modal-help-header">FAQ</div>
+
+					<div class="modal-help-content">	
+						<div class="modal-help-listheader">Import\open the project</div>
+						<div class="modal-help-listtext">
+                            <ol style="margin-top:0pt;margin-bottom:0pt;">
+	<li dir="ltr" style="list-style-type: decimal; vertical-align: baseline;">
+	<p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span id="docs-internal-guid-af71bf2e-a010-29be-7e24-ec4a6bc0bd59"><span style="vertical-align: baseline; white-space: pre-wrap;">&ldquo;Open only&rdquo; - will open project the same way, as File&gt;Open menu</span></span></p>
+	</li>
+	<li dir="ltr" style="list-style-type: decimal; vertical-align: baseline;">
+	<p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span id="docs-internal-guid-af71bf2e-a010-29be-7e24-ec4a6bc0bd59"><span style="vertical-align: baseline; white-space: pre-wrap;">&ldquo;Import and Add&rdquo; - will import the project and add the layers into the timeline</span></span></p>
+	</li>
+	<li dir="ltr" style="list-style-type: decimal; vertical-align: baseline;">
+	<p dir="ltr" style="line-height:1.38;margin-top:0pt;margin-bottom:0pt;"><span id="docs-internal-guid-af71bf2e-a010-29be-7e24-ec4a6bc0bd59"><span style="vertical-align: baseline; white-space: pre-wrap;">&ldquo;Import and Open&rdquo; - will import the composition and open the related composition.</span></span></p>
+	</li>
+</ol>
+
+						</div>
+						<div class="modal-help-listheader">Switching between the folders</div>
+						<div class="modal-help-listtext">
+							You can switch between the categories as you are working with file manager, or quickly switch between the folders by “click and drag” “Folders” button.
+						</div>
+						<div class="modal-help-listheader">Create collections and add to Favourites</div>
+						<div class="modal-help-listtext">
+							Also you can group favourite elements into collections or mark them as favourite.
+						</div>
+						<div class="modal-help-listheader">Applying Presets</div>
+						<div class="modal-help-listtext">
+							To apply preset, just open the composition, select your layer and drag the preset into one of the options “In”, “Out” or “In+Out”
+						</div>	
+                        <div class="modal-help-listheader">Adding own projects and presets</div>
+						<div class="modal-help-listtext">
+							You can do that in full version of AEViewer.
+                            More details on http://aeviewer.com
+						</div>
+                        
+                        <div class="modal-help-listheader">Font Manager script doesn't open</div>
+						<div class="modal-help-listtext">
+							 Relaunch AEViewer and try again.
+						</div>	
+                        
+					</div>
+
+
+					<div class="modal-help-actions">
+						<a id="modal-help-actions-cancel">Cancel</a>
+						<a id="modal-help-actions-needhelp">Contact us</a>						
+					</div>
+
+					<div style="clear: both"></div>
+				</div>
+			</div>
+		</div>
+
+		<!----- /help ------>
+
+
+		<div id="topfolder-container-modal">
+			<div id="topfolder-content">
+				<div class="scroll scroll-up targeted"><img src="img/list-up.png"></div>
+				<ul></ul>
+				<div class="scroll scroll-down targeted"><img src="img/list-down.png"></div>	
+			</div>
+		</div>
+
+    </div>
+
+    <input id="keypress-catcher" type="text">
+
+    <img class="hidden" src="img/top.svg" id="image-folder-top">
+    <img class="hidden" src="img/folder.svg" id="image-folder">
+
+	<!-- tree -->
+	<script data-main="js/main" src="js/require.js"></script>		
+
+</body>
+</html>

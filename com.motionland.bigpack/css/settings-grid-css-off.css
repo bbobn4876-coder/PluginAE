@@ -1,0 +1,11 @@
+.file-browser > ul > li {
+	box-shadow: none!important;
+}
+
+.file-browser > ul > li:hover {
+	box-shadow: 1px 1px #6a6969, 1px -1px #6a6969, -1px 1px #6a6969, -1px -1px #6a6969!important;
+}
+
+.file-browser > ul > li:active {
+	box-shadow: 2px 2px #2d8ceb, 2px -2px #2d8ceb, -2px 2px #2d8ceb, -2px -2px #2d8ceb!important;
+}

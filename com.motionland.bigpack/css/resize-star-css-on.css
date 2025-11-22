@@ -1,0 +1,3 @@
+.file-browser > ul > li:hover .file-preview-bookmarks {
+	display: block;
+}

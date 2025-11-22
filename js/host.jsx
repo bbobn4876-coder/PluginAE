@@ -784,13 +784,22 @@ function applyPreset(filePath) {
                             var markerTime = selectedLayer.inPoint + markerInfo.time;
                             var marker = new MarkerValue(markerName);
 
-                            // Add marker data
+                            // Add marker data as comment (JSON string)
                             if (markerInfo.hasOwnProperty('data')) {
+                                var commentData = [];
                                 for (var key in markerInfo.data) {
                                     if (markerInfo.data[key] !== "") {
-                                        marker.setValueAtKey(key, markerInfo.data[key]);
+                                        commentData.push(key + ": " + markerInfo.data[key]);
                                     }
                                 }
+                                if (commentData.length > 0) {
+                                    marker.comment = commentData.join(", ");
+                                }
+                            }
+
+                            // Set marker duration if available
+                            if (markerInfo.hasOwnProperty('duration')) {
+                                marker.duration = markerInfo.duration;
                             }
 
                             selectedLayer.property("Marker").setValueAtTime(markerTime, marker);

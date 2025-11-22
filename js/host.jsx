@@ -776,21 +776,14 @@ function applyPreset(filePath) {
                     selectedLayer.threeDLayer = presetData.threeDLayer;
                 }
 
-                // Set in and out points first
-                selectedLayer.inPoint = activeComp.time;
-                if (selectedLayer.source && selectedLayer.source.duration) {
-                    selectedLayer.outPoint = activeComp.time + selectedLayer.source.duration;
-                } else {
-                    selectedLayer.outPoint = activeComp.time + activeComp.duration;
-                }
-
-                // Add markers from the marker object
+                // Add markers from the marker object (without changing in/out points)
                 if (presetData.hasOwnProperty('marker')) {
+                    var baseTime = selectedLayer.startTime;
                     for (var markerName in presetData.marker) {
                         if (presetData.marker.hasOwnProperty(markerName)) {
                             var markerInfo = presetData.marker[markerName];
                             if (markerInfo.hasOwnProperty('time')) {
-                                var markerTime = selectedLayer.inPoint + markerInfo.time;
+                                var markerTime = baseTime + markerInfo.time;
                                 var marker = new MarkerValue(markerName);
 
                                 // Add marker data as comment
@@ -812,83 +805,6 @@ function applyPreset(filePath) {
                                 }
 
                                 selectedLayer.property("Marker").setValueAtTime(markerTime, marker);
-                            }
-                        }
-                    }
-                }
-
-                // Add effects (Expression Controls and other effects)
-                if (presetData.hasOwnProperty('effects')) {
-                    // Add "In" effects
-                    if (presetData.effects.hasOwnProperty('In') && presetData.effects.In instanceof Array) {
-                        for (var i = 0; i < presetData.effects.In.length; i++) {
-                            var effectItem = presetData.effects.In[i];
-
-                            if (typeof effectItem === 'string') {
-                                // Effect match name (e.g., "ADBE Slider Control", "ADBE Checkbox Control")
-                                var effectMatchName = effectItem;
-                                // Next item should be the effect properties
-                                if (i + 1 < presetData.effects.In.length && typeof presetData.effects.In[i + 1] === 'object') {
-                                    var effectProps = presetData.effects.In[i + 1];
-                                    var effect = selectedLayer.property("ADBE Effect Parade").addProperty(effectMatchName);
-
-                                    // Set effect name
-                                    if (effectProps.hasOwnProperty('name')) {
-                                        effect.name = effectProps.name;
-                                    }
-
-                                    // Apply effect property values
-                                    if (effectProps.hasOwnProperty('values') && effectProps.values instanceof Array) {
-                                        for (var v = 0; v < effectProps.values.length && v < effect.numProperties; v++) {
-                                            var prop = effect.property(v + 1);
-                                            if (prop && prop.canSetExpression) {
-                                                var val = effectProps.values[v];
-                                                if (typeof val === 'string') {
-                                                    prop.expression = val;
-                                                } else {
-                                                    prop.setValue(val);
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    i++; // Skip the properties object
-                                }
-                            }
-                        }
-                    }
-
-                    // Add "Out" effects
-                    if (presetData.effects.hasOwnProperty('Out') && presetData.effects.Out instanceof Array) {
-                        for (var i = 0; i < presetData.effects.Out.length; i++) {
-                            var effectItem = presetData.effects.Out[i];
-
-                            if (typeof effectItem === 'string') {
-                                var effectMatchName = effectItem;
-                                if (i + 1 < presetData.effects.Out.length && typeof presetData.effects.Out[i + 1] === 'object') {
-                                    var effectProps = presetData.effects.Out[i + 1];
-                                    var effect = selectedLayer.property("ADBE Effect Parade").addProperty(effectMatchName);
-
-                                    if (effectProps.hasOwnProperty('name')) {
-                                        effect.name = effectProps.name;
-                                    }
-
-                                    if (effectProps.hasOwnProperty('values') && effectProps.values instanceof Array) {
-                                        for (var v = 0; v < effectProps.values.length && v < effect.numProperties; v++) {
-                                            var prop = effect.property(v + 1);
-                                            if (prop && prop.canSetExpression) {
-                                                var val = effectProps.values[v];
-                                                if (typeof val === 'string') {
-                                                    prop.expression = val;
-                                                } else {
-                                                    prop.setValue(val);
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    i++;
-                                }
                             }
                         }
                     }

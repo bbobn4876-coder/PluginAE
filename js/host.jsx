@@ -406,53 +406,81 @@ function executeJSXFile(filePath) {
                 existingItemIds[item.id] = true;
             }
         }
-        var layerCountBefore = activeComp.numLayers;
 
         // Use $.evalFile() which is the proper way to execute JSX scripts
         var result = $.evalFile(jsxFile);
 
-        // Find newly created items (by checking IDs) and add them to timeline
-        var addedCount = 0;
+        // Find or create "Projects" folder
+        var projectsFolder = null;
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+            if (item instanceof FolderItem && item.name === "Projects") {
+                projectsFolder = item;
+                break;
+            }
+        }
+
+        // Create Projects folder if it doesn't exist
+        if (!projectsFolder) {
+            projectsFolder = app.project.items.addFolder("Projects");
+        }
+
+        // Get .jsx file name without extension
+        var fileName = jsxFile.name.replace(/\.jsx$/i, '');
+
+        // Create subfolder for this .jsx file
+        var jsxFolder = app.project.items.addFolder(fileName);
+        jsxFolder.parentFolder = projectsFolder;
+
+        // Find ALL newly created items (not in our existing IDs list)
+        var newCompositions = [];
+        var newItems = [];
+
         for (var i = 1; i <= app.project.numItems; i++) {
             var item = app.project.item(i);
 
-            // Check if this is a new item (wasn't in our list before)
+            // Check if this item is new (wasn't in our list before)
             if (item && !existingItemIds[item.id]) {
-                // Add any composition or footage to the active composition's timeline
-                if (item instanceof CompItem || item instanceof FootageItem) {
-                    try {
-                        // Add to timeline at the top
-                        var newLayer = activeComp.layers.add(item);
+                // Skip the folders we just created
+                if (item === projectsFolder || item === jsxFolder) {
+                    continue;
+                }
 
-                        // Position at current time
-                        newLayer.startTime = activeComp.time;
+                newItems.push(item);
 
-                        addedCount++;
-                    } catch (addError) {
-                        // Continue even if one item fails
-                        continue;
-                    }
+                // Only collect compositions
+                if (item instanceof CompItem) {
+                    newCompositions.push(item);
                 }
             }
         }
 
-        // Check if any layers were added directly by the script
-        if (activeComp.numLayers > layerCountBefore) {
-            var layersAdded = activeComp.numLayers - layerCountBefore;
-            // Only count layers that weren't added by us
-            if (layersAdded > addedCount) {
-                addedCount += (layersAdded - addedCount);
-            }
+        // Move all new items to the .jsx folder
+        for (var j = 0; j < newItems.length; j++) {
+            newItems[j].parentFolder = jsxFolder;
         }
 
-        // Return the result or success message
-        if (addedCount > 0) {
-            return "true";
-        } else if (result !== undefined && result !== null && result !== "") {
-            return result.toString();
+        // Add ONLY the first composition to the timeline with in/out points
+        if (newCompositions.length > 0) {
+            var firstComp = newCompositions[0];
+
+            try {
+                // Add to timeline at the top
+                var newLayer = activeComp.layers.add(firstComp);
+
+                // Position at current time
+                newLayer.startTime = activeComp.time;
+
+                // Set in and out points to match composition duration
+                newLayer.inPoint = activeComp.time;
+                newLayer.outPoint = activeComp.time + firstComp.duration;
+
+                return "true";
+            } catch (addError) {
+                return "Error: Failed to add composition to timeline - " + addError.toString();
+            }
         } else {
-            // Script executed but didn't add anything to timeline
-            return "Script executed successfully, but no items were added to timeline.";
+            return "Error: Script executed but no compositions were found. The script may contain only footage items or no items at all.";
         }
 
     } catch (e) {

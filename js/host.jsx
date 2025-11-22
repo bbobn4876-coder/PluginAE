@@ -817,6 +817,83 @@ function applyPreset(filePath) {
                     }
                 }
 
+                // Add effects (Expression Controls and other effects)
+                if (presetData.hasOwnProperty('effects')) {
+                    // Add "In" effects
+                    if (presetData.effects.hasOwnProperty('In') && presetData.effects.In instanceof Array) {
+                        for (var i = 0; i < presetData.effects.In.length; i++) {
+                            var effectItem = presetData.effects.In[i];
+
+                            if (typeof effectItem === 'string') {
+                                // Effect match name (e.g., "ADBE Slider Control", "ADBE Checkbox Control")
+                                var effectMatchName = effectItem;
+                                // Next item should be the effect properties
+                                if (i + 1 < presetData.effects.In.length && typeof presetData.effects.In[i + 1] === 'object') {
+                                    var effectProps = presetData.effects.In[i + 1];
+                                    var effect = selectedLayer.property("ADBE Effect Parade").addProperty(effectMatchName);
+
+                                    // Set effect name
+                                    if (effectProps.hasOwnProperty('name')) {
+                                        effect.name = effectProps.name;
+                                    }
+
+                                    // Apply effect property values
+                                    if (effectProps.hasOwnProperty('values') && effectProps.values instanceof Array) {
+                                        for (var v = 0; v < effectProps.values.length && v < effect.numProperties; v++) {
+                                            var prop = effect.property(v + 1);
+                                            if (prop && prop.canSetExpression) {
+                                                var val = effectProps.values[v];
+                                                if (typeof val === 'string') {
+                                                    prop.expression = val;
+                                                } else {
+                                                    prop.setValue(val);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    i++; // Skip the properties object
+                                }
+                            }
+                        }
+                    }
+
+                    // Add "Out" effects
+                    if (presetData.effects.hasOwnProperty('Out') && presetData.effects.Out instanceof Array) {
+                        for (var i = 0; i < presetData.effects.Out.length; i++) {
+                            var effectItem = presetData.effects.Out[i];
+
+                            if (typeof effectItem === 'string') {
+                                var effectMatchName = effectItem;
+                                if (i + 1 < presetData.effects.Out.length && typeof presetData.effects.Out[i + 1] === 'object') {
+                                    var effectProps = presetData.effects.Out[i + 1];
+                                    var effect = selectedLayer.property("ADBE Effect Parade").addProperty(effectMatchName);
+
+                                    if (effectProps.hasOwnProperty('name')) {
+                                        effect.name = effectProps.name;
+                                    }
+
+                                    if (effectProps.hasOwnProperty('values') && effectProps.values instanceof Array) {
+                                        for (var v = 0; v < effectProps.values.length && v < effect.numProperties; v++) {
+                                            var prop = effect.property(v + 1);
+                                            if (prop && prop.canSetExpression) {
+                                                var val = effectProps.values[v];
+                                                if (typeof val === 'string') {
+                                                    prop.expression = val;
+                                                } else {
+                                                    prop.setValue(val);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    i++;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Apply transform expressions to Opacity
                 if (presetData.hasOwnProperty('transform') && presetData.transform instanceof Array) {
                     var transformProp = selectedLayer.property("ADBE Transform Group").property("ADBE Opacity");

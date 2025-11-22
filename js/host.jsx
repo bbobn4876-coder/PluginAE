@@ -748,7 +748,7 @@ function applyPreset(filePath) {
             }
         }
 
-        // Handle .prst preset files (exact same logic as .ffx)
+        // Handle .prst preset files (same as .ffx but with in/out points)
         if (fileType === 'prst') {
             // Check if a layer is selected
             if (activeComp.selectedLayers.length === 0) {
@@ -760,6 +760,17 @@ function applyPreset(filePath) {
             try {
                 // Apply the preset to the selected layer
                 selectedLayer.applyPreset(presetFile);
+
+                // Set in and out points on the layer
+                selectedLayer.inPoint = activeComp.time;
+
+                // If layer has a source with duration, use it; otherwise use composition duration
+                if (selectedLayer.source && selectedLayer.source.duration) {
+                    selectedLayer.outPoint = activeComp.time + selectedLayer.source.duration;
+                } else {
+                    selectedLayer.outPoint = activeComp.time + activeComp.duration;
+                }
+
                 return "true";
             } catch (prstError) {
                 return "Error: Failed to apply preset - " + prstError.toString();

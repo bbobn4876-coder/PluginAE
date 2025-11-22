@@ -678,19 +678,66 @@ function applyPreset(filePath) {
                 return "Error: Cannot import this file type";
             }
 
-        } else if (fileType === 'ffx' || fileType === 'prst') {
-            // Apply animation preset to selected layer (for both .ffx and .prst files)
-            // First check if there's a selected layer
+        } else if (fileType === 'ffx') {
+            // Apply .ffx preset directly to selected layer
             if (activeComp.selectedLayers.length === 0) {
                 return "Error: No layer selected. Please select a layer to apply the preset.";
             }
 
             var selectedLayer = activeComp.selectedLayers[0];
 
-            // Apply the animation preset
             try {
                 selectedLayer.applyPreset(presetFile);
                 return "true";
+            } catch (presetError) {
+                return "Error: Failed to apply preset - " + presetError.toString();
+            }
+
+        } else if (fileType === 'prst') {
+            // Apply .prst preset: create FluxMotion folder and import preset there first
+            if (activeComp.selectedLayers.length === 0) {
+                return "Error: No layer selected. Please select a layer to apply the preset.";
+            }
+
+            var selectedLayer = activeComp.selectedLayers[0];
+
+            try {
+                // Find or create "FluxMotion" folder
+                var fluxMotionFolder = null;
+                for (var i = 1; i <= app.project.numItems; i++) {
+                    var item = app.project.item(i);
+                    if (item instanceof FolderItem && item.name === "FluxMotion") {
+                        fluxMotionFolder = item;
+                        break;
+                    }
+                }
+
+                // Create FluxMotion folder if it doesn't exist
+                if (!fluxMotionFolder) {
+                    fluxMotionFolder = app.project.items.addFolder("FluxMotion");
+                }
+
+                // Import the .prst file as footage into FluxMotion folder
+                var importOptions = new ImportOptions(presetFile);
+
+                if (importOptions.canImportAs(ImportAsType.FOOTAGE)) {
+                    var importedPreset = app.project.importFile(importOptions);
+
+                    // Move imported preset to FluxMotion folder
+                    importedPreset.parentFolder = fluxMotionFolder;
+
+                    // Get the imported file reference for applying preset
+                    var presetToApply = new File(importedPreset.file.fsName);
+
+                    // Apply the preset to selected layer
+                    selectedLayer.applyPreset(presetToApply);
+
+                    return "true";
+                } else {
+                    // If can't import as footage, try applying directly
+                    selectedLayer.applyPreset(presetFile);
+                    return "true";
+                }
             } catch (presetError) {
                 return "Error: Failed to apply preset - " + presetError.toString();
             }

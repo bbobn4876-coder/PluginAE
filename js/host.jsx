@@ -722,8 +722,8 @@ function applyPreset(filePath) {
                 return "Error: Cannot import this file type";
             }
 
-        } else if (fileType === 'ffx') {
-            // Apply .ffx preset directly to selected layer
+        } else if (fileType === 'ffx' || fileType === 'prst') {
+            // Apply .ffx or .prst preset directly to selected layer (identical logic)
             if (activeComp.selectedLayers.length === 0) {
                 return "Error: No layer selected. Please select a layer to apply the preset.";
             }
@@ -735,42 +735,6 @@ function applyPreset(filePath) {
                 return "true";
             } catch (presetError) {
                 return "Error: Failed to apply preset - " + presetError.toString();
-            }
-
-        } else if (fileType === 'prst') {
-            // Try to import and apply .prst file
-            try {
-                var importOptions = new ImportOptions(presetFile);
-
-                // Try importing as project first
-                if (importOptions.canImportAs(ImportAsType.PROJECT)) {
-                    app.project.importFile(importOptions);
-                    return "true";
-                }
-                // Try importing as footage
-                else if (importOptions.canImportAs(ImportAsType.FOOTAGE)) {
-                    var footage = app.project.importFile(importOptions);
-
-                    // Add to timeline if there's an active comp
-                    if (activeComp && activeComp instanceof CompItem) {
-                        var newLayer = activeComp.layers.add(footage);
-                        newLayer.startTime = activeComp.time;
-                        return "true";
-                    }
-                    return "true";
-                }
-                // If can't import, try applying as preset to selected layer
-                else {
-                    if (activeComp.selectedLayers.length === 0) {
-                        return "Error: No layer selected. Please select a layer to apply the preset.";
-                    }
-
-                    var selectedLayer = activeComp.selectedLayers[0];
-                    selectedLayer.applyPreset(presetFile);
-                    return "true";
-                }
-            } catch (prstError) {
-                return "Error: Failed to process .prst file - " + prstError.toString();
             }
 
         } else {

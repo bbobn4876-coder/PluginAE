@@ -748,7 +748,7 @@ function applyPreset(filePath) {
             }
         }
 
-        // Handle .prst preset files (same as .ffx but with in/out points)
+        // Handle .prst preset files (custom JSON format with markers, effects, transforms)
         if (fileType === 'prst') {
             // Check if a layer is selected
             if (activeComp.selectedLayers.length === 0) {
@@ -758,13 +758,140 @@ function applyPreset(filePath) {
             var selectedLayer = activeComp.selectedLayers[0];
 
             try {
-                // Apply the preset to the selected layer
-                selectedLayer.applyPreset(presetFile);
+                // Read and parse the .prst JSON file
+                presetFile.open('r');
+                var jsonContent = presetFile.read();
+                presetFile.close();
+
+                var presetData = JSON.parse(jsonContent);
+
+                // Apply layer properties
+                if (presetData.hasOwnProperty('adjustmentLayer') && presetData.adjustmentLayer === true) {
+                    selectedLayer.adjustmentLayer = true;
+                }
+                if (presetData.hasOwnProperty('motionBlur') && presetData.motionBlur === true) {
+                    selectedLayer.motionBlur = true;
+                }
+                if (presetData.hasOwnProperty('threeDLayer') && presetData.threeDLayer === true) {
+                    selectedLayer.threeDLayer = true;
+                }
+
+                // Add markers
+                if (presetData.hasOwnProperty('marker')) {
+                    for (var markerName in presetData.marker) {
+                        var markerInfo = presetData.marker[markerName];
+                        if (markerInfo.hasOwnProperty('time')) {
+                            var markerTime = selectedLayer.inPoint + markerInfo.time;
+                            var marker = new MarkerValue(markerName);
+
+                            // Add marker data
+                            if (markerInfo.hasOwnProperty('data')) {
+                                for (var key in markerInfo.data) {
+                                    if (markerInfo.data[key] !== "") {
+                                        marker.setValueAtKey(key, markerInfo.data[key]);
+                                    }
+                                }
+                            }
+
+                            selectedLayer.property("Marker").setValueAtTime(markerTime, marker);
+                        }
+                    }
+                }
+
+                // Add effects
+                if (presetData.hasOwnProperty('effects')) {
+                    // Add "In" effects
+                    if (presetData.effects.hasOwnProperty('In') && presetData.effects.In instanceof Array) {
+                        for (var i = 0; i < presetData.effects.In.length; i++) {
+                            var effectItem = presetData.effects.In[i];
+
+                            if (typeof effectItem === 'string') {
+                                // Effect match name
+                                var effectMatchName = effectItem;
+                                // Next item should be the effect properties
+                                if (i + 1 < presetData.effects.In.length && typeof presetData.effects.In[i + 1] === 'object') {
+                                    var effectProps = presetData.effects.In[i + 1];
+                                    var effect = selectedLayer.property("ADBE Effect Parade").addProperty(effectMatchName);
+
+                                    if (effectProps.hasOwnProperty('name')) {
+                                        effect.name = effectProps.name;
+                                    }
+
+                                    // Apply effect values
+                                    if (effectProps.hasOwnProperty('values') && effectProps.values instanceof Array) {
+                                        for (var v = 0; v < effectProps.values.length && v < effect.numProperties; v++) {
+                                            var prop = effect.property(v + 1);
+                                            if (prop && prop.canSetExpression) {
+                                                var val = effectProps.values[v];
+                                                if (typeof val === 'string') {
+                                                    prop.expression = val;
+                                                } else {
+                                                    prop.setValue(val);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    i++; // Skip the properties object
+                                }
+                            }
+                        }
+                    }
+
+                    // Add "Out" effects
+                    if (presetData.effects.hasOwnProperty('Out') && presetData.effects.Out instanceof Array) {
+                        for (var i = 0; i < presetData.effects.Out.length; i++) {
+                            var effectItem = presetData.effects.Out[i];
+
+                            if (typeof effectItem === 'string') {
+                                var effectMatchName = effectItem;
+                                if (i + 1 < presetData.effects.Out.length && typeof presetData.effects.Out[i + 1] === 'object') {
+                                    var effectProps = presetData.effects.Out[i + 1];
+                                    var effect = selectedLayer.property("ADBE Effect Parade").addProperty(effectMatchName);
+
+                                    if (effectProps.hasOwnProperty('name')) {
+                                        effect.name = effectProps.name;
+                                    }
+
+                                    if (effectProps.hasOwnProperty('values') && effectProps.values instanceof Array) {
+                                        for (var v = 0; v < effectProps.values.length && v < effect.numProperties; v++) {
+                                            var prop = effect.property(v + 1);
+                                            if (prop && prop.canSetExpression) {
+                                                var val = effectProps.values[v];
+                                                if (typeof val === 'string') {
+                                                    prop.expression = val;
+                                                } else {
+                                                    prop.setValue(val);
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    i++;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Apply transform expressions
+                if (presetData.hasOwnProperty('transform') && presetData.transform instanceof Array) {
+                    var transformProp = selectedLayer.property("ADBE Transform Group").property("ADBE Opacity");
+                    if (transformProp && transformProp.canSetExpression && presetData.transform.length >= 2) {
+                        var opacityExpressions = [];
+                        for (var t = 1; t < presetData.transform.length; t++) {
+                            if (typeof presetData.transform[t] === 'string') {
+                                opacityExpressions.push(presetData.transform[t]);
+                            }
+                        }
+                        if (opacityExpressions.length > 0) {
+                            transformProp.expression = opacityExpressions.join('\n');
+                        }
+                    }
+                }
 
                 // Set in and out points on the layer
                 selectedLayer.inPoint = activeComp.time;
-
-                // If layer has a source with duration, use it; otherwise use composition duration
                 if (selectedLayer.source && selectedLayer.source.duration) {
                     selectedLayer.outPoint = activeComp.time + selectedLayer.source.duration;
                 } else {
@@ -773,7 +900,7 @@ function applyPreset(filePath) {
 
                 return "true";
             } catch (prstError) {
-                return "Error: Failed to apply preset - " + prstError.toString();
+                return "Error: Failed to apply .prst preset - " + prstError.toString();
             }
         }
 

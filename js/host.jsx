@@ -398,47 +398,61 @@ function executeJSXFile(filePath) {
             return "Error: No active composition. Please create or open a composition first.";
         }
 
-        // Remember the number of items and layers before execution
-        var itemCountBefore = app.project.numItems;
+        // Remember IDs of all existing items before execution
+        var existingItemIds = {};
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+            if (item) {
+                existingItemIds[item.id] = true;
+            }
+        }
         var layerCountBefore = activeComp.numLayers;
 
         // Use $.evalFile() which is the proper way to execute JSX scripts
         var result = $.evalFile(jsxFile);
 
-        // Find newly created items and add them to timeline
+        // Find newly created items (by checking IDs) and add them to timeline
         var addedCount = 0;
-        for (var i = itemCountBefore + 1; i <= app.project.numItems; i++) {
+        for (var i = 1; i <= app.project.numItems; i++) {
             var item = app.project.item(i);
 
-            // Add any composition or footage to the active composition's timeline
-            if (item instanceof CompItem || item instanceof FootageItem) {
-                try {
-                    // Add to timeline at the top
-                    var newLayer = activeComp.layers.add(item);
+            // Check if this is a new item (wasn't in our list before)
+            if (item && !existingItemIds[item.id]) {
+                // Add any composition or footage to the active composition's timeline
+                if (item instanceof CompItem || item instanceof FootageItem) {
+                    try {
+                        // Add to timeline at the top
+                        var newLayer = activeComp.layers.add(item);
 
-                    // Position at current time
-                    newLayer.startTime = activeComp.time;
+                        // Position at current time
+                        newLayer.startTime = activeComp.time;
 
-                    addedCount++;
-                } catch (addError) {
-                    // Continue even if one item fails
-                    continue;
+                        addedCount++;
+                    } catch (addError) {
+                        // Continue even if one item fails
+                        continue;
+                    }
                 }
             }
         }
 
         // Check if any layers were added directly by the script
         if (activeComp.numLayers > layerCountBefore) {
-            addedCount += (activeComp.numLayers - layerCountBefore);
+            var layersAdded = activeComp.numLayers - layerCountBefore;
+            // Only count layers that weren't added by us
+            if (layersAdded > addedCount) {
+                addedCount += (layersAdded - addedCount);
+            }
         }
 
         // Return the result or success message
-        if (result !== undefined && result !== null) {
+        if (addedCount > 0) {
+            return "true";
+        } else if (result !== undefined && result !== null && result !== "") {
             return result.toString();
-        } else if (addedCount > 0) {
-            return "true";
         } else {
-            return "true";
+            // Script executed but didn't add anything to timeline
+            return "Script executed successfully, but no items were added to timeline.";
         }
 
     } catch (e) {
@@ -694,7 +708,7 @@ function applyPreset(filePath) {
             }
 
         } else if (fileType === 'prst') {
-            // Apply .prst preset: create FluxMotion folder and import preset there first
+            // Apply .prst preset directly to selected layer
             if (activeComp.selectedLayers.length === 0) {
                 return "Error: No layer selected. Please select a layer to apply the preset.";
             }
@@ -702,42 +716,9 @@ function applyPreset(filePath) {
             var selectedLayer = activeComp.selectedLayers[0];
 
             try {
-                // Find or create "FluxMotion" folder
-                var fluxMotionFolder = null;
-                for (var i = 1; i <= app.project.numItems; i++) {
-                    var item = app.project.item(i);
-                    if (item instanceof FolderItem && item.name === "FluxMotion") {
-                        fluxMotionFolder = item;
-                        break;
-                    }
-                }
-
-                // Create FluxMotion folder if it doesn't exist
-                if (!fluxMotionFolder) {
-                    fluxMotionFolder = app.project.items.addFolder("FluxMotion");
-                }
-
-                // Import the .prst file as footage into FluxMotion folder
-                var importOptions = new ImportOptions(presetFile);
-
-                if (importOptions.canImportAs(ImportAsType.FOOTAGE)) {
-                    var importedPreset = app.project.importFile(importOptions);
-
-                    // Move imported preset to FluxMotion folder
-                    importedPreset.parentFolder = fluxMotionFolder;
-
-                    // Get the imported file reference for applying preset
-                    var presetToApply = new File(importedPreset.file.fsName);
-
-                    // Apply the preset to selected layer
-                    selectedLayer.applyPreset(presetToApply);
-
-                    return "true";
-                } else {
-                    // If can't import as footage, try applying directly
-                    selectedLayer.applyPreset(presetFile);
-                    return "true";
-                }
+                // Apply the preset directly to the selected layer
+                selectedLayer.applyPreset(presetFile);
+                return "true";
             } catch (presetError) {
                 return "Error: Failed to apply preset - " + presetError.toString();
             }

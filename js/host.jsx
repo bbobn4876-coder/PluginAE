@@ -381,15 +381,22 @@ function getSystemInfo() {
 
 /**
  * Execute a JSX script file and add created items to timeline
+ * Same logic as openAEProject but for .jsx files
  * @param {string} filePath - Full path to the .jsx file
- * @return {string} Result of script execution
+ * @return {string} "true" on success, error message on failure
  */
 function executeJSXFile(filePath) {
     try {
+        // Check if file exists
         var jsxFile = new File(filePath);
 
         if (!jsxFile.exists) {
-            return "Error: JSX file not found - " + filePath;
+            return "Error: File not found - " + filePath;
+        }
+
+        // Check file extension
+        if (!filePath.match(/\.jsx$/i)) {
+            return "Error: Not a valid JSX file (must be .jsx)";
         }
 
         // Check if there's an active composition
@@ -407,8 +414,30 @@ function executeJSXFile(filePath) {
             }
         }
 
-        // Use $.evalFile() which is the proper way to execute JSX scripts
-        var result = $.evalFile(jsxFile);
+        // Execute the JSX script
+        $.evalFile(jsxFile);
+
+        // Find or create "Projects" folder
+        var projectsFolder = null;
+        for (var i = 1; i <= app.project.numItems; i++) {
+            var item = app.project.item(i);
+            if (item instanceof FolderItem && item.name === "Projects") {
+                projectsFolder = item;
+                break;
+            }
+        }
+
+        // Create Projects folder if it doesn't exist
+        if (!projectsFolder) {
+            projectsFolder = app.project.items.addFolder("Projects");
+        }
+
+        // Get .jsx file name without extension
+        var fileName = jsxFile.name.replace(/\.jsx$/i, '');
+
+        // Create subfolder for this .jsx file
+        var jsxFolder = app.project.items.addFolder(fileName);
+        jsxFolder.parentFolder = projectsFolder;
 
         // Find ALL newly created items (not in our existing IDs list)
         var newCompositions = [];
@@ -419,6 +448,11 @@ function executeJSXFile(filePath) {
 
             // Check if this item is new (wasn't in our list before)
             if (item && !existingItemIds[item.id]) {
+                // Skip the folders we just created
+                if (item === projectsFolder || item === jsxFolder) {
+                    continue;
+                }
+
                 newItems.push(item);
 
                 // Only collect compositions
@@ -428,36 +462,9 @@ function executeJSXFile(filePath) {
             }
         }
 
-        // If new items were created, organize them in folders
-        if (newItems.length > 0) {
-            // Find or create "Projects" folder
-            var projectsFolder = null;
-            for (var i = 1; i <= app.project.numItems; i++) {
-                var item = app.project.item(i);
-                if (item instanceof FolderItem && item.name === "Projects") {
-                    projectsFolder = item;
-                    break;
-                }
-            }
-
-            // Create Projects folder if it doesn't exist
-            if (!projectsFolder) {
-                projectsFolder = app.project.items.addFolder("Projects");
-            }
-
-            // Get .jsx file name without extension
-            var fileName = jsxFile.name.replace(/\.jsx$/i, '');
-
-            // Create subfolder for this .jsx file
-            var jsxFolder = app.project.items.addFolder(fileName);
-            jsxFolder.parentFolder = projectsFolder;
-
-            // Move all new items to the .jsx folder (except the folders we just created)
-            for (var j = 0; j < newItems.length; j++) {
-                if (newItems[j] !== projectsFolder && newItems[j] !== jsxFolder) {
-                    newItems[j].parentFolder = jsxFolder;
-                }
-            }
+        // Move all new items to the .jsx folder
+        for (var j = 0; j < newItems.length; j++) {
+            newItems[j].parentFolder = jsxFolder;
         }
 
         // Add ONLY the first composition to the timeline with in/out points
@@ -480,9 +487,7 @@ function executeJSXFile(filePath) {
                 return "Error: Failed to add composition to timeline - " + addError.toString();
             }
         } else {
-            // Script executed successfully but didn't create compositions
-            // This is normal for scripts that just add effects/layers to existing comp
-            return "true";
+            return "Error: Script executed but no compositions were found. The script may contain only footage items or no items at all.";
         }
 
     } catch (e) {
@@ -691,12 +696,14 @@ function getProjectDetails(filePath) {
  */
 function applyPreset(filePath) {
     try {
+        // Check if file exists
         var presetFile = new File(filePath);
 
         if (!presetFile.exists) {
             return "Error: File not found - " + filePath;
         }
 
+        // Check if there's an active composition
         var activeComp = app.project.activeItem;
 
         if (!(activeComp instanceof CompItem)) {
@@ -706,24 +713,26 @@ function applyPreset(filePath) {
         // Get file extension
         var fileType = filePath.split('.').pop().toLowerCase();
 
+        // Handle .jsx files
         if (fileType === 'jsx') {
-            // Execute JSX file
             return executeJSXFile(filePath);
+        }
 
-        } else if (fileType === 'pack' || fileType === 'aep') {
-            // Import project file into current project
+        // Handle .aep and .pack files
+        if (fileType === 'pack' || fileType === 'aep') {
             var importOptions = new ImportOptions(presetFile);
 
             if (importOptions.canImportAs(ImportAsType.PROJECT)) {
-                // Import as project
                 app.project.importFile(importOptions);
                 return "true";
             } else {
                 return "Error: Cannot import this file type";
             }
+        }
 
-        } else if (fileType === 'ffx' || fileType === 'prst') {
-            // Apply .ffx or .prst preset directly to selected layer (identical logic)
+        // Handle .ffx preset files
+        if (fileType === 'ffx') {
+            // Check if a layer is selected
             if (activeComp.selectedLayers.length === 0) {
                 return "Error: No layer selected. Please select a layer to apply the preset.";
             }
@@ -731,15 +740,34 @@ function applyPreset(filePath) {
             var selectedLayer = activeComp.selectedLayers[0];
 
             try {
+                // Apply the preset to the selected layer
                 selectedLayer.applyPreset(presetFile);
                 return "true";
-            } catch (presetError) {
-                return "Error: Failed to apply preset - " + presetError.toString();
+            } catch (ffxError) {
+                return "Error: Failed to apply preset - " + ffxError.toString();
+            }
+        }
+
+        // Handle .prst preset files (exact same logic as .ffx)
+        if (fileType === 'prst') {
+            // Check if a layer is selected
+            if (activeComp.selectedLayers.length === 0) {
+                return "Error: No layer selected. Please select a layer to apply the preset.";
             }
 
-        } else {
-            return "Error: Unsupported preset file type: " + fileType;
+            var selectedLayer = activeComp.selectedLayers[0];
+
+            try {
+                // Apply the preset to the selected layer
+                selectedLayer.applyPreset(presetFile);
+                return "true";
+            } catch (prstError) {
+                return "Error: Failed to apply preset - " + prstError.toString();
+            }
         }
+
+        // Unsupported file type
+        return "Error: Unsupported preset file type: " + fileType;
 
     } catch (e) {
         return "Error: " + e.toString();

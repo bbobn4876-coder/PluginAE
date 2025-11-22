@@ -748,7 +748,7 @@ function applyPreset(filePath) {
             }
         }
 
-        // Handle .prst preset files (expression text applied to Opacity)
+        // Handle .prst preset files (JSON format with markers and expressions)
         if (fileType === 'prst') {
             // Check if a layer is selected
             if (activeComp.selectedLayers.length === 0) {
@@ -758,31 +758,79 @@ function applyPreset(filePath) {
             var selectedLayer = activeComp.selectedLayers[0];
 
             try {
-                // Read the .prst file as text (it contains an expression)
+                // Read and parse the .prst JSON file
                 presetFile.open('r');
-                var expressionCode = presetFile.read();
+                var jsonContent = presetFile.read();
                 presetFile.close();
 
-                // Get the Opacity property of the selected layer
-                var opacityProp = selectedLayer.property("ADBE Transform Group").property("ADBE Opacity");
+                var presetData = JSON.parse(jsonContent);
 
-                if (!opacityProp) {
-                    return "Error: Cannot find Opacity property on selected layer";
+                // Apply layer properties
+                if (presetData.hasOwnProperty('adjustmentLayer')) {
+                    selectedLayer.adjustmentLayer = presetData.adjustmentLayer;
+                }
+                if (presetData.hasOwnProperty('motionBlur')) {
+                    selectedLayer.motionBlur = presetData.motionBlur;
+                }
+                if (presetData.hasOwnProperty('threeDLayer')) {
+                    selectedLayer.threeDLayer = presetData.threeDLayer;
                 }
 
-                if (!opacityProp.canSetExpression) {
-                    return "Error: Cannot set expression on Opacity property";
-                }
-
-                // Apply the expression to Opacity
-                opacityProp.expression = expressionCode;
-
-                // Set in and out points on the layer
+                // Set in and out points first
                 selectedLayer.inPoint = activeComp.time;
                 if (selectedLayer.source && selectedLayer.source.duration) {
                     selectedLayer.outPoint = activeComp.time + selectedLayer.source.duration;
                 } else {
                     selectedLayer.outPoint = activeComp.time + activeComp.duration;
+                }
+
+                // Add markers from the marker object
+                if (presetData.hasOwnProperty('marker')) {
+                    for (var markerName in presetData.marker) {
+                        if (presetData.marker.hasOwnProperty(markerName)) {
+                            var markerInfo = presetData.marker[markerName];
+                            if (markerInfo.hasOwnProperty('time')) {
+                                var markerTime = selectedLayer.inPoint + markerInfo.time;
+                                var marker = new MarkerValue(markerName);
+
+                                // Add marker data as comment
+                                if (markerInfo.hasOwnProperty('data')) {
+                                    var commentData = [];
+                                    for (var key in markerInfo.data) {
+                                        if (markerInfo.data.hasOwnProperty(key) && markerInfo.data[key] !== "") {
+                                            commentData.push(key + ": " + markerInfo.data[key]);
+                                        }
+                                    }
+                                    if (commentData.length > 0) {
+                                        marker.comment = commentData.join(", ");
+                                    }
+                                }
+
+                                // Set marker duration if available
+                                if (markerInfo.hasOwnProperty('duration')) {
+                                    marker.duration = markerInfo.duration;
+                                }
+
+                                selectedLayer.property("Marker").setValueAtTime(markerTime, marker);
+                            }
+                        }
+                    }
+                }
+
+                // Apply transform expressions to Opacity
+                if (presetData.hasOwnProperty('transform') && presetData.transform instanceof Array) {
+                    var transformProp = selectedLayer.property("ADBE Transform Group").property("ADBE Opacity");
+                    if (transformProp && transformProp.canSetExpression && presetData.transform.length >= 2) {
+                        var opacityExpressions = [];
+                        for (var t = 1; t < presetData.transform.length; t++) {
+                            if (typeof presetData.transform[t] === 'string') {
+                                opacityExpressions.push(presetData.transform[t]);
+                            }
+                        }
+                        if (opacityExpressions.length > 0) {
+                            transformProp.expression = opacityExpressions.join('\n');
+                        }
+                    }
                 }
 
                 return "true";

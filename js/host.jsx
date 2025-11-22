@@ -410,28 +410,6 @@ function executeJSXFile(filePath) {
         // Use $.evalFile() which is the proper way to execute JSX scripts
         var result = $.evalFile(jsxFile);
 
-        // Find or create "Projects" folder
-        var projectsFolder = null;
-        for (var i = 1; i <= app.project.numItems; i++) {
-            var item = app.project.item(i);
-            if (item instanceof FolderItem && item.name === "Projects") {
-                projectsFolder = item;
-                break;
-            }
-        }
-
-        // Create Projects folder if it doesn't exist
-        if (!projectsFolder) {
-            projectsFolder = app.project.items.addFolder("Projects");
-        }
-
-        // Get .jsx file name without extension
-        var fileName = jsxFile.name.replace(/\.jsx$/i, '');
-
-        // Create subfolder for this .jsx file
-        var jsxFolder = app.project.items.addFolder(fileName);
-        jsxFolder.parentFolder = projectsFolder;
-
         // Find ALL newly created items (not in our existing IDs list)
         var newCompositions = [];
         var newItems = [];
@@ -441,11 +419,6 @@ function executeJSXFile(filePath) {
 
             // Check if this item is new (wasn't in our list before)
             if (item && !existingItemIds[item.id]) {
-                // Skip the folders we just created
-                if (item === projectsFolder || item === jsxFolder) {
-                    continue;
-                }
-
                 newItems.push(item);
 
                 // Only collect compositions
@@ -455,9 +428,36 @@ function executeJSXFile(filePath) {
             }
         }
 
-        // Move all new items to the .jsx folder
-        for (var j = 0; j < newItems.length; j++) {
-            newItems[j].parentFolder = jsxFolder;
+        // If new items were created, organize them in folders
+        if (newItems.length > 0) {
+            // Find or create "Projects" folder
+            var projectsFolder = null;
+            for (var i = 1; i <= app.project.numItems; i++) {
+                var item = app.project.item(i);
+                if (item instanceof FolderItem && item.name === "Projects") {
+                    projectsFolder = item;
+                    break;
+                }
+            }
+
+            // Create Projects folder if it doesn't exist
+            if (!projectsFolder) {
+                projectsFolder = app.project.items.addFolder("Projects");
+            }
+
+            // Get .jsx file name without extension
+            var fileName = jsxFile.name.replace(/\.jsx$/i, '');
+
+            // Create subfolder for this .jsx file
+            var jsxFolder = app.project.items.addFolder(fileName);
+            jsxFolder.parentFolder = projectsFolder;
+
+            // Move all new items to the .jsx folder (except the folders we just created)
+            for (var j = 0; j < newItems.length; j++) {
+                if (newItems[j] !== projectsFolder && newItems[j] !== jsxFolder) {
+                    newItems[j].parentFolder = jsxFolder;
+                }
+            }
         }
 
         // Add ONLY the first composition to the timeline with in/out points
@@ -480,7 +480,9 @@ function executeJSXFile(filePath) {
                 return "Error: Failed to add composition to timeline - " + addError.toString();
             }
         } else {
-            return "Error: Script executed but no compositions were found. The script may contain only footage items or no items at all.";
+            // Script executed successfully but didn't create compositions
+            // This is normal for scripts that just add effects/layers to existing comp
+            return "true";
         }
 
     } catch (e) {
@@ -736,19 +738,39 @@ function applyPreset(filePath) {
             }
 
         } else if (fileType === 'prst') {
-            // Apply .prst preset directly to selected layer
-            if (activeComp.selectedLayers.length === 0) {
-                return "Error: No layer selected. Please select a layer to apply the preset.";
-            }
-
-            var selectedLayer = activeComp.selectedLayers[0];
-
+            // Try to import and apply .prst file
             try {
-                // Apply the preset directly to the selected layer
-                selectedLayer.applyPreset(presetFile);
-                return "true";
-            } catch (presetError) {
-                return "Error: Failed to apply preset - " + presetError.toString();
+                var importOptions = new ImportOptions(presetFile);
+
+                // Try importing as project first
+                if (importOptions.canImportAs(ImportAsType.PROJECT)) {
+                    app.project.importFile(importOptions);
+                    return "true";
+                }
+                // Try importing as footage
+                else if (importOptions.canImportAs(ImportAsType.FOOTAGE)) {
+                    var footage = app.project.importFile(importOptions);
+
+                    // Add to timeline if there's an active comp
+                    if (activeComp && activeComp instanceof CompItem) {
+                        var newLayer = activeComp.layers.add(footage);
+                        newLayer.startTime = activeComp.time;
+                        return "true";
+                    }
+                    return "true";
+                }
+                // If can't import, try applying as preset to selected layer
+                else {
+                    if (activeComp.selectedLayers.length === 0) {
+                        return "Error: No layer selected. Please select a layer to apply the preset.";
+                    }
+
+                    var selectedLayer = activeComp.selectedLayers[0];
+                    selectedLayer.applyPreset(presetFile);
+                    return "true";
+                }
+            } catch (prstError) {
+                return "Error: Failed to process .prst file - " + prstError.toString();
             }
 
         } else {
